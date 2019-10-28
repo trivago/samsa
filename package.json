@@ -1,0 +1,25 @@
+{
+  "name": "kafka-streams",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^24.0.20",
+    "@types/leveldown": "^4.0.0",
+    "@types/levelup": "^3.1.1",
+    "@types/node": "^12.11.7",
+    "jest": "^24.9.0",
+    "prettier": "^1.18.2",
+    "ts-jest": "^24.1.0",
+    "ts-node": "^8.4.1",
+    "typescript": "^3.6.4"
+  },
+  "dependencies": {
+    "kafkajs": "^1.11.0",
+    "leveldown": "^5.4.0",
+    "levelup": "^4.3.2"
+  },
+  "scripts": {
+    "test": "jest"
+  }
+}
