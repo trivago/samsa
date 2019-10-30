@@ -2,9 +2,7 @@ import { ConsumerConfig } from "kafkajs";
 export interface Message {
     key: string | Buffer;
     value: any;
-    partition: number;
-    topic: string;
-    offset: string;
+    commit: () => void;
 }
 
 export interface StreamConfig extends ConsumerConfig {
