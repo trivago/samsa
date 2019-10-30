@@ -2219,10 +2219,10 @@ level-supports@~1.0.0:
   dependencies:
     xtend "^4.0.2"
 
-leveldown@^5.4.0:
-  version "5.4.0"
-  resolved "https://registry.yarnpkg.com/leveldown/-/leveldown-5.4.0.tgz#fd6731af2c7fd717c878eb05c87c12036e986e93"
-  integrity sha512-uKwfJT+jgXL3mdb3UR/bOaO13VX85R7yGaunK+WJNuGWSoxskp3JgYwFCKfPruulx/bVn2xI7XmyNHVQkVC/Ig==
+leveldown@^5.4.1:
+  version "5.4.1"
+  resolved "https://registry.yarnpkg.com/leveldown/-/leveldown-5.4.1.tgz#83a8fdd9bb52b1ed69be2ef59822b6cdfcdb51ec"
+  integrity sha512-3lMPc7eU3yj5g+qF1qlALInzIYnkySIosR1AsUKFjL9D8fYbTLuENBAeDRZXIG4qeWOAyqRItOoLu2v2avWiMA==
   dependencies:
     abstract-leveldown "~6.2.1"
     napi-macros "~2.0.0"

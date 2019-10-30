@@ -84,7 +84,9 @@ export const createConsumerStream = async (
                 if (next) {
                     const { key, value, commit } = next;
                     this.push({ key, value });
-                    commit();
+                    if (commit) {
+                        commit();
+                    }
                 }
                 return;
             }
