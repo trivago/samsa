@@ -1,5 +1,5 @@
 import { StreamConfig, Message } from "./../_types";
-import { Kafka, KafkaMessage } from "kafkajs";
+import { Kafka } from "kafkajs";
 import { Readable } from "stream";
 
 /**
@@ -21,7 +21,7 @@ export const createConsumerStream = async (
     } = streamConfig;
 
     // our caching mechanism of sorts
-    let _messages: KafkaMessage[] = [];
+    let _messages: Message[] = [];
 
     // to keep track of if our consumer is currently connected and running
     let connected = false;
@@ -39,11 +39,18 @@ export const createConsumerStream = async (
 
     const startConsumer = () =>
         consumer.run({
-            eachBatch: ({ batch: { messages } }) => {
+            eachBatchAutoResolve: false,
+            eachBatch: ({ batch: { messages }, resolveOffset }) => {
                 running = true;
 
                 // add any new messages to the messages queue
-                _messages = _messages.concat(messages);
+                _messages = _messages.concat(
+                    messages.map(({ key, value, offset }) => ({
+                        key,
+                        value,
+                        commit: () => resolveOffset(offset)
+                    }))
+                );
 
                 // if we have more messages than our highWaterMark, we need to pause the consumer
                 if (_messages.length > highWaterMark) {
@@ -69,16 +76,17 @@ export const createConsumerStream = async (
             /**
              * TODO:
              * Figure out what we should provide down the pipe. Does it make sense to send the whole message,
-             * or just the key and value?
+             * or just the key and value? One thing we could do is pass down the resolveOffset function as well
+             * so that we can say when we pushed that message?
              */
             if (_messages.length > 0) {
                 const next = _messages.shift();
-
                 if (next) {
-                    return this.push(next);
-                } else {
-                    return;
+                    const { key, value, commit } = next;
+                    this.push({ key, value });
+                    commit();
                 }
+                return;
             }
 
             // if we have paused topics, restart them
