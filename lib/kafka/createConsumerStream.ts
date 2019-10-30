@@ -60,7 +60,7 @@ import { Readable } from "stream";
 // }
 
 /**
- * Creates a stream containing the messages
+ * Creates a stream containing messages from the requested Kafka topic
  * @param client
  * @param ConsumerConfig
  * @param topicConfig
@@ -71,11 +71,14 @@ export const createConsumerStream = async (
     topicConfig: TopicConfig
 ) => {
     const { topic, fromBeginning = true } = topicConfig;
+
     let source: KafkaMessage[] = [];
+    let connected = false;
+    let running = false;
 
     const consumer = client.consumer(consumerConfig);
 
-    await consumer.connect();
+    await consumer.connect().then(() => (connected = true));
     await consumer.subscribe({
         topic,
         fromBeginning
@@ -83,23 +86,48 @@ export const createConsumerStream = async (
 
     const stream = new Readable({
         objectMode: true,
-        read: function() {
-            while (source.length > 0) {
+        read: function(_size: number) {
+            if (source.length > 0) {
                 const next = source.shift();
-                this.push(next);
+
+                return this.push(next);
             }
-            consumer.resume([{ topic }]);
+
+            if (!connected) {
+                return;
+            }
+
+            if (this.destroyed) {
+                return;
+            }
+
+            if (consumer.paused().length > 0) {
+                return consumer.resume([{ topic }]);
+            }
+
+            if (!running) {
+                return consumer.run({
+                    eachBatch: data => {
+                        running = true;
+
+                        source = source.concat(data.batch.messages);
+
+                        // this should be configurable
+                        if (source.length > 100000) {
+                            consumer.pause([{ topic }]);
+                            running = false;
+                        }
+
+                        this._read(_size);
+
+                        return Promise.resolve(undefined);
+                    }
+                });
+            }
         }
     });
 
-    await consumer.run({
-        eachBatch: data => {
-            source = source.concat(data.batch.messages);
-
-            consumer.pause([{ topic }]);
-            return Promise.resolve();
-        }
-    });
+    // stream.on('pause');
 
     return stream;
 };
