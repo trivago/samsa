@@ -68,16 +68,10 @@ export const sink = (cache: LevelUp, sinkConfig: SinkConfig = {}) => {
             }
         },
         flush: async function flushSink(next) {
-            /**
-             * TODO: Add a toggle between key mode and array mode?
-             */
             await writeBatch();
             while (_keys.length > 0) {
                 this.push(_keys.shift());
             }
-            // const keys = [..._keys];
-            // _keys = [];
-            // next(null, keys);
             next(null);
         }
     });
