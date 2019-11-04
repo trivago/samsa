@@ -6,8 +6,9 @@ export type FilterPredicate<T extends any> = (
 ) => boolean;
 
 /**
- *
+ * Removes unwanted values from a stream that don't satisfy the given function
  * @param predicate
+ *
  */
 export const filter = <T extends any>(predicate: FilterPredicate<T>) =>
     new Transform({

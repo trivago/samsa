@@ -1,7 +1,7 @@
 import { Transform } from "stream";
 
 /**
- * Skips a given number of chunks
+ * Skips a given number of objects
  * @param n chunks to skip
  */
 export const skip = (n: number) => {

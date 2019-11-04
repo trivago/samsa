@@ -2,18 +2,19 @@ import { Transform } from "stream";
 import { ReduceCallback } from "./reduce";
 
 /**
- * Reduces the incoming data to a single value and outputs that data over time
- * @param cb callback used to reduce incoming data
+ * Like reduce, accumulates the incoming data according to the callback passed. However, unlike reduce,
+ * scan will return the accumulated data over time.
+ * @param callback callback used to reduce incoming data
  */
 export const scan = <T extends any, A extends any>(
-    cb: ReduceCallback<T, A>
+    callback: ReduceCallback<T, A>
 ) => {
     let result = {};
 
     return new Transform({
         objectMode: true,
         transform(data, encoding, next) {
-            result = cb(result as any, data, encoding);
+            result = callback(result as A, data, encoding);
             next(null, result);
         }
     });

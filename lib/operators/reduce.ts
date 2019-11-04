@@ -7,18 +7,19 @@ export type ReduceCallback<T extends any, A extends any> = (
 ) => A;
 
 /**
- * Reduces the incoming data to a single value and outputs that data once all data has been consumed
- * @param cb callback used to reduce incoming data
+ * Accumulates the incoming data according to the callback passed. The accumulated value will
+ * be returned once no more data has been written.
+ * @param callback
  */
 export const reduce = <T extends any, A extends any>(
-    cb: ReduceCallback<T, A>
+    callback: ReduceCallback<T, A>
 ) => {
     let result = {};
 
     return new Transform({
         objectMode: true,
         transform(data, encoding, next) {
-            result = cb(result as any, data, encoding);
+            result = callback(result as any, data, encoding);
             next();
         },
         flush(next) {
