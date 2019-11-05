@@ -41,7 +41,7 @@ export const sink = (cache: LevelUp, sinkConfig: SinkConfig = {}) => {
         highWaterMark,
         transform: async function transformSink(data: Message, _, next) {
             const { key, value } = data;
-            if (!key) {
+            if (key === undefined || key === null) {
                 throw new TypeError(`Expected a message containing a key`);
             }
 

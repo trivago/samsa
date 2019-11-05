@@ -109,3 +109,6 @@ dist
 *.js.map
 *.d.ts
 *.d.ts.map
+
+build
+dist
