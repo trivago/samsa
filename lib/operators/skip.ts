@@ -5,7 +5,7 @@ import { Transform } from "stream";
  * @param n chunks to skip
  */
 export const skip = (n: number) => {
-    let toSkip = 1;
+    let toSkip = 0;
 
     return new Transform({
         objectMode: true,

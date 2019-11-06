@@ -12,9 +12,10 @@ export type ReduceCallback<T extends any, A extends any> = (
  * @param callback
  */
 export const reduce = <T extends any, A extends any>(
-    callback: ReduceCallback<T, A>
+    callback: ReduceCallback<T, A>,
+    initial: A
 ) => {
-    let result = {};
+    let result = initial;
 
     return new Transform({
         objectMode: true,

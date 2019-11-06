@@ -15,6 +15,10 @@ export const map = <T extends any, R extends any>(
     new Transform({
         objectMode: true,
         transform(data, encoding, next) {
-            next(null, callbcak(data, encoding));
+            if (data === null) {
+                next(null, null);
+            } else {
+                next(null, callbcak(data, encoding));
+            }
         }
     });

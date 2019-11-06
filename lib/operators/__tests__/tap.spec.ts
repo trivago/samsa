@@ -4,17 +4,19 @@ import { createReadStream } from "./stream.setup";
 describe("Operator: tap", () => {
     const stream = createReadStream();
 
-    it("should cause a sideeffect", () => {
+    it("should cause a sideeffect", done => {
+        expect.assertions(1);
         let sideEffect = false;
 
-        stream.pipe(
+        const tapped = stream.pipe(
             tap(() => {
                 sideEffect = true;
             })
         );
 
-        stream.on("close", () => {
+        tapped.once("data", d => {
             expect(sideEffect).toBe(true);
+            done();
         });
     });
 });

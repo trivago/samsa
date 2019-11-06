@@ -3,17 +3,21 @@ import { MapCallback, map } from "../map";
 
 describe("Operator: map", () => {
     const stream = createReadStream();
-    it("should map values to a new value", () => {
+    it("should map values to a new value", done => {
+        expect.assertions(1);
         const result: number[] = [];
 
         const mapper: MapCallback<number, number> = n => n * 2;
 
-        stream.pipe(map(mapper));
+        const mapped = stream.pipe(map(mapper));
 
-        stream.on("data", result.push);
+        mapped.on("data", d => {
+            result.push(d);
+        });
 
-        stream.on("close", () => {
-            expect(result).toEqual([0, 2, 4, 6, 8, 10, 12, 14, 16, 18]);
+        mapped.on("finish", () => {
+            expect(result).toEqual([2, 4, 6, 8, 10, 12, 14, 16, 18]);
+            done();
         });
     });
 });

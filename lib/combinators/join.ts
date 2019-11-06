@@ -55,30 +55,48 @@ export const join = (
     const output = new Transform({
         objectMode: true,
         transform: async (key, _, next) => {
-            try {
-                const [pValue, fValue] = await Promise.all([
-                    caches.primary.get(key),
-                    caches.foreign.get(key)
-                ]);
-
-                // do we need to do this?
-                // await Promise.all([
-                //     primaryCache.del(key),
-                //     foreignCache.del(key)
-                // ]);
-
-                next(null, {
-                    key,
-                    primary: pValue,
-                    foreign: fValue
+            Promise.all([caches.primary.get(key), caches.foreign.get(key)])
+                .then(([pValue, fValue]) => {
+                    next(null, {
+                        key,
+                        [cacheNames.primary]: pValue,
+                        [cacheNames.foreign]: fValue
+                    });
+                })
+                .catch(err => {
+                    if (err.type === "NotFoundError") {
+                        return next();
+                    } else {
+                        return next(err);
+                    }
                 });
-            } catch (err) {
-                if (err.type === "NotFoundError") {
-                    next();
-                } else {
-                    next(err);
-                }
-            }
+            //     try {
+            //         const [pValue, fValue] = await Promise.all([
+            //             caches.primary.get(key),
+            //             caches.foreign.get(key)
+            //         ]);
+
+            //         // do we need to do this?
+            //         // await Promise.all([
+            //         //     primaryCache.del(key),
+            //         //     foreignCache.del(key)
+            //         // ]);
+
+            //         if (pValue && fValue) {
+            //             return next(null, {
+            //                 key,
+            //                 primary: pValue,
+            //                 foreign: fValue
+            //             });
+            //         }
+            //     } catch (err) {
+            //         console.log(err);
+            //         if (err.type === "NotFoundError") {
+            //             return next();
+            //         } else {
+            //             return next(err);
+            //         }
+            //     }
         }
     });
 

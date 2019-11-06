@@ -4,19 +4,21 @@ import { createReadStream } from "./stream.setup";
 describe("Operator: reduce", () => {
     const stream = createReadStream();
 
-    it("should reduce to a single value", () => {
+    it("should reduce to a single value", done => {
+        expect.assertions(1);
         let result: number;
 
         const add: ReduceCallback<number, number> = (a, v) => a + v;
 
-        stream.pipe(reduce(add));
+        const reduced = stream.pipe(reduce(add, 0));
 
-        stream.on("data", data => {
+        reduced.on("data", data => {
             result = data;
         });
 
-        stream.on("close", () => {
+        reduced.on("finish", () => {
             expect(result).toEqual(45);
+            done();
         });
     });
 });

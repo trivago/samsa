@@ -1,20 +1,25 @@
-import { ReduceCallback, reduce } from "../reduce";
+import { ReduceCallback } from "./../reduce";
+import { scan } from "../scan";
 import { createReadStream } from "./stream.setup";
 
-describe("Operator: reduce", () => {
+describe("Operator: scan", () => {
     const stream = createReadStream();
 
-    it("should reduce to a single value", () => {
+    it("should scan over an accumulator", done => {
+        expect.assertions(1);
         let results: number[] = [];
 
         const add: ReduceCallback<number, number> = (a, v) => a + v;
 
-        stream.pipe(reduce(add));
+        const scanned = stream.pipe(scan(add, 0));
 
-        stream.on("data", results.push);
+        scanned.on("data", data => {
+            results.push(data);
+        });
 
-        stream.on("close", () => {
+        scanned.on("finish", () => {
             expect(results).toEqual([1, 3, 6, 10, 15, 21, 28, 36, 45]);
+            done();
         });
     });
 });

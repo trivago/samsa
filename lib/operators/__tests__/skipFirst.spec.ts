@@ -3,14 +3,18 @@ import { skipFirst } from "../skipFirst";
 
 describe("Operator: skipFirst", () => {
     const stream = createReadStream();
-    it("should skip the first", () => {
+    it("should skip the first value", done => {
+        expect.assertions(1);
         const results: number[] = [];
-        stream.pipe(skipFirst());
+        const skipped = stream.pipe(skipFirst());
 
-        stream.on("data", results.push);
+        skipped.on("data", d => {
+            results.push(d);
+        });
 
-        stream.on("close", () => {
-            expect(results).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        skipped.on("finish", () => {
+            expect(results).toEqual([2, 3, 4, 5, 6, 7, 8, 9]);
+            done();
         });
     });
 });
