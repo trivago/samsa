@@ -1,5 +1,5 @@
 import { StreamConfig, Message } from "./../_types";
-import { Kafka } from "kafkajs";
+import { Kafka, KafkaConfig } from "kafkajs";
 import { Readable } from "stream";
 
 /**
@@ -7,8 +7,9 @@ import { Readable } from "stream";
  * @param client
  * @param streamConfig
  */
+
 export const createConsumerStream = async (
-    client: Kafka,
+    clientOrConfig: Kafka,
     streamConfig: StreamConfig
 ) => {
     const {
@@ -26,6 +27,11 @@ export const createConsumerStream = async (
     // to keep track of if our consumer is currently connected and running
     let connected = false;
     let running = false;
+
+    const client =
+        clientOrConfig instanceof Kafka
+            ? clientOrConfig
+            : new Kafka(clientOrConfig);
 
     // create our consumer
     const consumer = client.consumer(consumerConfig);
