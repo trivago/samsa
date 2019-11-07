@@ -1,12 +1,12 @@
 import leveldown from "leveldown";
 import levelup, { LevelUp } from "levelup";
 import { Readable, Transform } from "stream";
-import { sink } from "../operators";
+import { sink, SinkConfig } from "../operators";
 import { merge } from "./merge";
 import * as fs from "fs";
 import * as path from "path";
 
-export interface JoinConfig {
+export interface JoinConfig extends SinkConfig {
     cachePath?: string;
     cacheNames?: {
         primary: string;
@@ -18,10 +18,17 @@ export interface JoinConfig {
     };
 }
 
+/**
+ * Joins two streams of key-value pairs into a single stream containing both pieces of information
+ * @param primary Readable stream containing primary information as key value pairs
+ * @param foreign Readable stream contianing forieng information as key value pairs
+ * @param joinConfig configuration for the caches used to join streams
+ * TODO: Choose a default type of store. Right now we're using LevelDB, but could this just be switched to an in memory store by default?
+ */
 export const join = (
     primary: Readable,
     foreign: Readable,
-    config: JoinConfig = {}
+    joinConfig: JoinConfig = {}
 ) => {
     const {
         cachePath = ".cache",
@@ -29,8 +36,9 @@ export const join = (
             primary: "primary",
             foreign: "foreign"
         },
-        caches: providedCaches
-    } = config;
+        caches: providedCaches,
+        ...sinkConfig
+    } = joinConfig;
     let caches: {
         primary: LevelUp;
         foreign: LevelUp;
@@ -70,39 +78,12 @@ export const join = (
                         return next(err);
                     }
                 });
-            //     try {
-            //         const [pValue, fValue] = await Promise.all([
-            //             caches.primary.get(key),
-            //             caches.foreign.get(key)
-            //         ]);
-
-            //         // do we need to do this?
-            //         // await Promise.all([
-            //         //     primaryCache.del(key),
-            //         //     foreignCache.del(key)
-            //         // ]);
-
-            //         if (pValue && fValue) {
-            //             return next(null, {
-            //                 key,
-            //                 primary: pValue,
-            //                 foreign: fValue
-            //             });
-            //         }
-            //     } catch (err) {
-            //         console.log(err);
-            //         if (err.type === "NotFoundError") {
-            //             return next();
-            //         } else {
-            //             return next(err);
-            //         }
-            //     }
         }
     });
 
     merge(
-        primary.pipe(sink(caches.primary)),
-        foreign.pipe(sink(caches.foreign))
+        primary.pipe(sink(caches.primary, sinkConfig)),
+        foreign.pipe(sink(caches.foreign, sinkConfig))
     ).pipe(output);
 
     return output;

@@ -6,4 +6,4 @@ export { FilterPredicate, filter } from "./filter";
 export { skip } from "./skip";
 export { skipFirst } from "./skipFirst";
 
-export { sink } from "./sink";
+export { SinkConfig, sink } from "./sink";

@@ -9,14 +9,14 @@ import { Readable } from "stream";
  */
 
 export const createConsumerStream = async (
-    clientOrConfig: Kafka,
+    kafkaClientOrConfig: Kafka,
     streamConfig: StreamConfig
 ) => {
     const {
         topic,
         fromBeginning = true,
         highWaterMark = 20000,
-        autoResume = false,
+        autoResume = true,
         retryIn = 1000, // allow for more fine grained control
         ...consumerConfig
     } = streamConfig;
@@ -29,9 +29,9 @@ export const createConsumerStream = async (
     let running = false;
 
     const client =
-        clientOrConfig instanceof Kafka
-            ? clientOrConfig
-            : new Kafka(clientOrConfig);
+        kafkaClientOrConfig instanceof Kafka
+            ? kafkaClientOrConfig
+            : new Kafka(kafkaClientOrConfig);
 
     // create our consumer
     const consumer = client.consumer(consumerConfig);
