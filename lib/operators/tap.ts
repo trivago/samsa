@@ -11,6 +11,7 @@ export const tap = (callback: TapCallback) =>
         objectMode: true,
         transform(data, encoding, next) {
             callback(data, encoding);
-            next(null, data);
+            this.push(data);
+            next(null);
         }
     });

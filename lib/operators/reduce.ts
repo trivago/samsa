@@ -24,7 +24,8 @@ export const reduce = <T extends any, A extends any>(
             next();
         },
         flush(next) {
-            next(null, result);
+            this.push(result);
+            next(null);
         }
     });
 };

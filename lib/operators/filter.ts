@@ -15,9 +15,8 @@ export const filter = <T extends any>(predicate: FilterPredicate<T>) =>
         objectMode: true,
         transform(data, encoding, next) {
             if (predicate(data, encoding)) {
-                next(null, data);
-            } else {
-                next();
+                this.push(data);
             }
+            next(null);
         }
     });

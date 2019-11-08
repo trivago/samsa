@@ -14,7 +14,8 @@ export const skip = (n: number) => {
                 toSkip++;
                 next();
             } else {
-                next(null, data);
+                this.push(data);
+                next();
             }
         }
     });

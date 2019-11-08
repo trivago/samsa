@@ -16,7 +16,8 @@ export const scan = <T extends any, A extends any>(
         objectMode: true,
         transform(data, encoding, next) {
             result = callback(result as A, data, encoding);
-            next(null, result);
+            this.push(result);
+            next();
         }
     });
 };
