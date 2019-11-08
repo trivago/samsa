@@ -7,10 +7,11 @@
 -   Stream operators for transforming and filtering data
 -   Stream combinators for combining streams
 -   Date Sink connector creationg built on top of [LevelUp](https://github.com/level/levelup)
-    <!-- - Creation for common kinds of streams (Kafka, CSV, etc.) -->
+-   Creation for common kinds of streams
 
 ## Documentation
 
 -   [Stream Operators](./lib/operators/OPERATORS.md)
 -   [Stream Combination](./lib/combinators/COMBINATORS.md)
 -   [Data Sink](./lib/operators/OPERATORS.md#sink)
+-   [Kafka Streams](./lib/operators/KAFKA.md)

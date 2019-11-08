@@ -9,7 +9,7 @@ import { Readable } from "stream";
  */
 
 export const createConsumerStream = async (
-    kafkaClientOrConfig: Kafka,
+    kafkaClientOrConfig: Kafka | KafkaConfig,
     streamConfig: StreamConfig
 ) => {
     const {
@@ -76,6 +76,7 @@ export const createConsumerStream = async (
     // This is our stream.
     const stream = new Readable({
         objectMode: true,
+        highWaterMark: 500000,
         read: async function(_size: number) {
             // On each read, we check if there are messages in the queue.
             // If there are, and that message exists, we push the message down the pipeline
