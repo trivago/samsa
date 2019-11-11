@@ -21,4 +21,47 @@ describe("Operator: reduce", () => {
             done();
         });
     });
+
+    it("should handle more than 16 objects", done => {
+        expect.assertions(1);
+        const stream = createReadStream(17);
+
+        const expected = Array.from(Array(17), (_, i) => i).reduce(
+            (acc, val) => acc + val,
+            0
+        );
+        let result: number = 0;
+
+        const reduced = stream.pipe(reduce((acc, val) => acc + val, 0));
+
+        reduced.on("data", d => {
+            result = d;
+        });
+
+        reduced.on("finish", () => {
+            expect(result).toEqual(expected);
+            done();
+        });
+    });
+    it("should handle a large amount of objects", done => {
+        expect.assertions(1);
+        const stream = createReadStream(1e6);
+
+        const expected = Array.from(Array(1e6), (_, i) => i).reduce(
+            (acc, val) => acc + val,
+            0
+        );
+        let result: number = 0;
+
+        const reduced = stream.pipe(reduce((acc, val) => acc + val, 0));
+
+        reduced.on("data", d => {
+            result = d;
+        });
+
+        reduced.on("finish", () => {
+            expect(result).toEqual(expected);
+            done();
+        });
+    });
 });
