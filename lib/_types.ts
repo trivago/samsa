@@ -10,5 +10,5 @@ export interface StreamConfig extends ConsumerConfig {
     fromBeginning?: boolean;
     highWaterMark?: number;
     autoResume?: boolean;
-    retryIn?: number;
+    resumeAfter?: number;
 }

@@ -17,7 +17,7 @@ export const createConsumerStream = async (
         fromBeginning = true,
         highWaterMark = 20000,
         autoResume = true,
-        retryIn = 1000, // allow for more fine grained control
+        resumeAfter = 1000, // allow for more fine grained control
         ...consumerConfig
     } = streamConfig;
 
@@ -116,7 +116,7 @@ export const createConsumerStream = async (
 
     // If our stream pauses because of backpressure somewhere down the line
     // we immediately pause the consumer and give downstream some time to catch up
-    // this is configurable through the retryIn field
+    // this is configurable through the resumeAfter field
     stream.on("pause", () => {
         consumer.pause([
             {
@@ -127,7 +127,7 @@ export const createConsumerStream = async (
         if (autoResume) {
             setTimeout(() => {
                 stream.resume();
-            }, retryIn);
+            }, resumeAfter);
         }
     });
 
