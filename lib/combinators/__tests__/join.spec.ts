@@ -2,12 +2,12 @@ import { createReadStream } from "./stream.setup";
 import { join } from "../join";
 
 describe("Combinator: join", () => {
-    const _expected = Array.from(Array(9), (_, i) => ({
-        key: i + 1,
-        primary: Buffer.from((i + 1).toString()),
-        foreign: Buffer.from((i + 1).toString())
+    const _expected = Array.from(Array(10), (_, i) => ({
+        key: i,
+        primary: Buffer.from(i.toString()),
+        foreign: Buffer.from(i.toString())
     }));
-    it("should merge 2 streams by key", done => {
+    it("should join 2 streams by key", done => {
         const stream1 = createReadStream(true);
         const stream2 = createReadStream(true);
         expect.assertions(1);
