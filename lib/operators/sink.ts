@@ -44,6 +44,7 @@ export const sink = (
     }
 
     const output = new Transform({
+        highWaterMark,
         objectMode: true,
         transform: async (data, _, next) => {
             const { key, value } = data;
