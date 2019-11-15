@@ -1,3 +1,4 @@
+import { SinkConfig } from "./sink";
 import { Transform } from "stream";
 import levelup, { LevelUp } from "levelup";
 import { AbstractLevelDOWN } from "abstract-leveldown";
@@ -6,7 +7,7 @@ import { Message } from "../_types";
 export interface SinkConfig {
     maxBatchSize?: number;
     highWaterMark?: number;
-    batchAge?: number;
+    // batchAge?: number;
 }
 /**
  * Creates a sink connector for storing incoming data by key.
@@ -15,41 +16,38 @@ export interface SinkConfig {
  */
 export const sink = (
     store: LevelUp | AbstractLevelDOWN,
-    sinkConfig: SinkConfig = {}
+    config: SinkConfig = {}
 ) => {
-    const {
-        maxBatchSize = 10000,
-        highWaterMark = 500000,
-        batchAge = 1000
-    } = sinkConfig;
-    store = store instanceof AbstractLevelDOWN ? levelup(store) : store;
+    const { maxBatchSize = 100000, highWaterMark = 500000 } = config;
 
-    let _batch = store.batch();
-    let _keys: (string | Buffer)[] = [];
-    let writeInterval: NodeJS.Timeout;
+    const cache = store instanceof AbstractLevelDOWN ? levelup(store) : store;
 
-    const setWriteInterval = () =>
-        setInterval(async () => {
-            // because the abstract level down types suck
-            // @ts-ignore
-            await _batch.write();
-            _batch = store.batch();
-        }, batchAge);
+    let batch = cache.batch();
+    let keys: (string | Buffer)[] = [];
 
-    const writeBatch = async () => {
-        clearInterval(writeInterval);
-        // because the abstract level down types suck
-        // @ts-ignore
-        await _batch.write();
-        _batch = store.batch();
-        writeInterval = setWriteInterval();
-    };
+    function writeKeys() {
+        for (const key of keys) {
+            output.push(key);
+        }
+        keys = [];
+    }
 
-    return new Transform({
+    async function writeBatch() {
+        try {
+            await batch.write();
+            batch = cache.batch();
+            writeKeys();
+        } catch (err) {
+            batch = cache.batch();
+            throw err;
+        }
+    }
+
+    const output = new Transform({
         objectMode: true,
-        highWaterMark,
-        transform: async function transformSink(data: Message, _, next) {
+        transform: async (data, _, next) => {
             const { key, value } = data;
+<<<<<<< Updated upstream
             if (key === undefined || key === null) {
                 throw new TypeError(`Expected a message containing a key`);
             }
@@ -82,6 +80,28 @@ export const sink = (
                 this.push(_keys.shift());
             }
             next(null);
+=======
+
+            if (value === null) {
+                batch.del(key);
+                keys = keys.filter(k => k === key);
+            } else {
+                batch.put(key, value);
+                keys.push(key);
+            }
+
+            if (batch.length === maxBatchSize) {
+                try {
+                    await writeBatch();
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+
+            next();
+>>>>>>> Stashed changes
         }
     });
+
+    return output;
 };

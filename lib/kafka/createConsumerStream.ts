@@ -1,6 +1,118 @@
 import { StreamConfig, Message } from "./../_types";
-import { Kafka, KafkaConfig } from "kafkajs";
+import { Kafka, KafkaConfig, Consumer } from "kafkajs";
 import { Readable } from "stream";
+
+const defaultConsumerConfig = {
+    highWaterMark: 100000,
+    autoResume: true,
+    resumeAfter: 100
+};
+class ConsumerStream extends Readable {
+    private buffer: Message[] = [];
+    private running: boolean = false;
+
+    constructor(
+        private consumer: Consumer,
+        private topic: string,
+        private config: {
+            highWaterMark: number;
+            autoResume: boolean;
+            resumeAfter: number;
+        } = defaultConsumerConfig
+    ) {
+        super({ objectMode: true });
+
+        this.running = false;
+
+        this.on("pause", () => {
+            this.pauseTopics();
+
+            if (this.config.autoResume) {
+                setTimeout(() => {
+                    this.resume();
+                }, this.config.resumeAfter);
+            }
+        });
+
+        this.on("resume", () => {
+            this.resumeTopics();
+        });
+    }
+
+    pauseTopics() {
+        this.consumer.pause([
+            {
+                topic: this.topic
+            }
+        ]);
+    }
+
+    resumeTopics() {
+        this.consumer.resume([
+            {
+                topic: this.topic
+            }
+        ]);
+    }
+
+    run() {
+        this.running = true;
+        this.consumer.run({
+            eachBatchAutoResolve: false,
+            eachBatch: ({ batch: { messages }, resolveOffset }) => {
+                this.running = true;
+
+                this.buffer = this.buffer.concat(
+                    messages.map(({ key, value, offset }) => ({
+                        key,
+                        value,
+                        commit: () => resolveOffset(offset)
+                    }))
+                );
+
+                if (this.buffer.length > 100000) {
+                    this.pauseTopics();
+                }
+                this._read();
+
+                return Promise.resolve(undefined);
+            }
+        });
+    }
+
+    _read() {
+        // if the buffer has messages, send them before consuming more
+        // this is, believe it or not, faster than shifting messages and sending them
+        // one at a time
+        if (this.buffer.length > 0) {
+            for (const message of this.buffer) {
+                const { key, value, commit } = message;
+                this.push({
+                    key,
+                    value
+                });
+                if (commit && typeof commit === "function") {
+                    commit();
+                }
+            }
+            this.buffer = [];
+
+            return;
+        }
+
+        if (this.destroyed || this.isPaused()) {
+            return;
+        }
+
+        if (!this.running) {
+            return this.run();
+        }
+
+        if (this.consumer.paused().length > 0) {
+            return this.resumeTopics();
+        }
+    }
+}
 
 /**
  * Creates a stream containing messages from the requested Kafka topic
@@ -15,18 +127,11 @@ export const createConsumerStream = async (
     const {
         topic,
         fromBeginning = true,
-        highWaterMark = 20000,
+        highWaterMark = 100000,
         autoResume = true,
         resumeAfter = 1000, // allow for more fine grained control
         ...consumerConfig
     } = streamConfig;
-
-    // our caching mechanism of sorts
-    let _messages: Message[] = [];
-
-    // to keep track of if our consumer is currently connected and running
-    let connected = false;
-    let running = false;
 
     const client =
         kafkaClientOrConfig instanceof Kafka
@@ -37,104 +142,15 @@ export const createConsumerStream = async (
     const consumer = client.consumer(consumerConfig);
 
     // connect our consumer and subscribe
-    await consumer.connect().then(() => (connected = true));
+    await consumer.connect();
     await consumer.subscribe({
         topic,
         fromBeginning
     });
 
-    const startConsumer = () =>
-        consumer.run({
-            eachBatchAutoResolve: false,
-            eachBatch: ({ batch: { messages }, resolveOffset }) => {
-                running = true;
-
-                // add any new messages to the messages queue
-                _messages = _messages.concat(
-                    messages.map(({ key, value, offset }) => ({
-                        key,
-                        value,
-                        commit: () => resolveOffset(offset)
-                    }))
-                );
-
-                // if we have more messages than our highWaterMark, we need to pause the consumer
-                if (_messages.length > highWaterMark) {
-                    consumer.pause([{ topic }]);
-                    running = false;
-                }
-
-                // I blame Blizzard:
-                // https://github.com/Blizzard/node-rdkafka/blob/master/lib/kafka-consumer-stream.js#L231
-                stream._read(0);
-
-                // bit of a microoptimization, because of how the async keyword is handled when compiling to JS
-                return Promise.resolve(undefined);
-            }
-        });
-
-    // This is our stream.
-    const stream = new Readable({
-        objectMode: true,
-        highWaterMark: 500000,
-        read: async function(_size: number) {
-            // On each read, we check if there are messages in the queue.
-            // If there are, and that message exists, we push the message down the pipeline
-            /**
-             * TODO:
-             * Figure out what we should provide down the pipe. Does it make sense to send the whole message,
-             * or just the key and value? One thing we could do is pass down the resolveOffset function as well
-             * so that we can say when we pushed that message?
-             */
-            if (_messages.length > 0) {
-                const next = _messages.shift();
-                if (next) {
-                    const { key, value, commit } = next;
-                    this.push({ key, value });
-                    if (commit) {
-                        commit();
-                    }
-                }
-                return;
-            }
-
-            // if we have paused topics, restart them
-            if (consumer.paused().length > 0) {
-                return consumer.resume([{ topic }]);
-            }
-
-            if (!connected || this.destroyed || this.isPaused() || running) {
-                return;
-            }
-
-            // if we aren't already running, start up the consumer
-            if (!running) {
-                return startConsumer();
-            }
-        }
+    return new ConsumerStream(consumer, topic, {
+        highWaterMark,
+        autoResume,
+        resumeAfter
     });
-
-    // If our stream pauses because of backpressure somewhere down the line
-    // we immediately pause the consumer and give downstream some time to catch up
-    // this is configurable through the resumeAfter field
-    stream.on("pause", () => {
-        consumer.pause([
-            {
-                topic
-            }
-        ]);
-        running = false;
-        if (autoResume) {
-            setTimeout(() => {
-                stream.resume();
-            }, resumeAfter);
-        }
-    });
-
-    // once we know the stream needs to restart, we'll start reading again.
-    stream.on("resume", () => {
-        stream._read(0);
-    });
-
-    return stream;
 };
