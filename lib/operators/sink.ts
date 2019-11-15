@@ -47,40 +47,6 @@ export const sink = (
         objectMode: true,
         transform: async (data, _, next) => {
             const { key, value } = data;
-<<<<<<< Updated upstream
-            if (key === undefined || key === null) {
-                throw new TypeError(`Expected a message containing a key`);
-            }
-
-            try {
-                if (value !== null) {
-                    _batch.put(key, value);
-                    _keys.push(key);
-                } else {
-                    _batch.del(key);
-                    _keys = _keys.filter(k => k !== key);
-                }
-
-                if (_batch.length >= maxBatchSize) {
-                    await writeBatch();
-                    while (_keys.length > 0) {
-                        this.push(_keys.shift());
-                    }
-                    next();
-                } else {
-                    next();
-                }
-            } catch (err) {
-                next(err);
-            }
-        },
-        flush: async function flushSink(next) {
-            await writeBatch();
-            while (_keys.length > 0) {
-                this.push(_keys.shift());
-            }
-            next(null);
-=======
 
             if (value === null) {
                 batch.del(key);
@@ -99,7 +65,6 @@ export const sink = (
             }
 
             next();
->>>>>>> Stashed changes
         }
     });
 
