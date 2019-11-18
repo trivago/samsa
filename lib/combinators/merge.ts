@@ -8,7 +8,8 @@ export const merge = (...streams: Readable[]) => {
     const output = new Transform({
         objectMode: true,
         transform(data, _, next) {
-            next(null, data);
+            this.push(data);
+            next();
         }
     });
     let sources: Readable[] = [];
@@ -20,6 +21,7 @@ export const merge = (...streams: Readable[]) => {
         });
         stream.once("end", () => {
             sources = sources.filter(source => source !== stream);
+            stream.unpipe(output);
         });
         stream.pipe(output);
     }

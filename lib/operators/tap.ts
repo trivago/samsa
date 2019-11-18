@@ -12,6 +12,6 @@ export const tap = (callback: TapCallback) =>
         transform(data, encoding, next) {
             callback(data, encoding);
             this.push(data);
-            next(null);
+            next();
         }
     });
