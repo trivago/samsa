@@ -1,29 +1,43 @@
-import { Readable, Transform } from "stream";
+import { Readable, PassThrough } from "stream";
 
 /**
  * Merge 1 or more streams into a single stream of values
  * @param streams
  */
 export const merge = (...streams: Readable[]) => {
-    const output = new Transform({
-        objectMode: true,
-        transform(data, _, next) {
-            this.push(data);
-            next();
-        }
+    const output = new PassThrough({
+        objectMode: true
     });
     let sources: Readable[] = [];
 
-    for (const stream of streams) {
-        sources.push(stream);
-        stream.once("error", err => {
-            output.emit("error", err);
+    add(streams);
+
+    function add(source: Readable | Readable[]) {
+        if (Array.isArray(source)) {
+            for (const stream of source) {
+                add(stream);
+            }
+            return;
+        }
+
+        sources.push(source);
+        source.once("end", () => {
+            remove(source);
         });
-        stream.once("end", () => {
-            sources = sources.filter(source => source !== stream);
-            stream.unpipe(output);
+        source.once("error", () => {
+            output.emit("error");
         });
-        stream.pipe(output);
+        source.pipe(
+            output,
+            { end: false }
+        );
+    }
+
+    function remove(source: Readable) {
+        sources = sources.filter(it => it !== source);
+        if (sources.length === 0 && output.readable) {
+            output.end();
+        }
     }
 
     return output;

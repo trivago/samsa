@@ -1,7 +1,12 @@
+import { ObjectTransform } from "../utils/ObjectTransform";
+import { TransformOptions, TransformCallback, Readable } from "stream";
+import { Key } from "../operators/sink";
+import { sink, tap } from "../operators";
+import { merge } from "./merge";
+
 // import leveldown from "leveldown";
 // import levelup, { LevelUp } from "levelup";
 // import { Readable, Transform } from "stream";
-// import { sink, SinkConfig } from "../operators";
 // import { merge } from "./merge";
 // import * as fs from "fs";
 // import * as path from "path";
@@ -18,6 +23,8 @@
 //     };
 // }
 
+type JoinProjection = (a: any, b: any) => any;
+
 // /**
 //  * Joins two streams of key-value pairs into a single stream containing both pieces of information
 //  * @param primary Readable stream containing primary information as key value pairs
@@ -25,6 +32,58 @@
 //  * @param joinConfig configuration for the caches used to join streams
 //  * TODO: Choose a default type of store. Right now we're using LevelDB, but could this just be switched to an in memory store by default?
 //  */
+export const join = (
+    primary: Readable,
+    foreign: Readable,
+    project: JoinProjection = (p, f) => [p, f],
+    debug: boolean = false
+) => {
+    const primarySink = primary.pipe(sink());
+    const foreignSink = foreign.pipe(sink());
+
+    const primaryKeys: Set<Key> = new Set();
+    const foreignKeys: Set<Key> = new Set();
+
+    const output = new ObjectTransform({
+        transform: async function joinTransform(key, _, next) {
+
+            if (debug) {
+                console.log("key:", key.toString());
+                console.log("primary:", primaryKeys.has(key.toString()));
+                console.log("foreign:", foreignKeys.has(key.toString()));
+            }
+
+            if (primaryKeys.has(key.toString()) && foreignKeys.has(key.toString())) {
+                const [p, f] = await Promise.all([
+                    primarySink.get(key),
+                    foreignSink.get(key)
+                ]);
+
+                this.push({
+                    key,
+                    value: project(p, f)
+                });
+            }
+
+            next();
+        }
+    });
+
+    merge(
+        primarySink.pipe(
+            tap(key => {
+                primaryKeys.add(key.toString());
+            })
+        ),
+        foreignSink.pipe(
+            tap(key => {
+                foreignKeys.add(key.toString());
+            })
+        )
+    ).pipe(output);
+
+    return output;
+};
 // export const join = (
 //     primary: Readable,
 //     foreign: Readable,
