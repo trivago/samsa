@@ -4,6 +4,17 @@ import { Key } from "../operators/sink";
 import { sink, tap } from "../operators";
 import { merge } from "./merge";
 
+/**
+ * 2 ktables
+ * kstream + ktable
+ *
+ * kstream - stateless
+ * ktable - changelog table for a stream (what we have in leveldb, technically)
+ *
+ * windowed joins
+ *  give a windowed view
+ */
+
 // import leveldown from "leveldown";
 // import levelup, { LevelUp } from "levelup";
 // import { Readable, Transform } from "stream";
@@ -23,8 +34,12 @@ import { merge } from "./merge";
 //     };
 // }
 
-type JoinProjection = (a: any, b: any) => any;
+type JoinProjection = <P extends any, F extends any, R extends any>(
+    a: P,
+    b: F
+) => R;
 
+// this then represents a KTABLE-KTABLE join...
 // /**
 //  * Joins two streams of key-value pairs into a single stream containing both pieces of information
 //  * @param primary Readable stream containing primary information as key value pairs
@@ -35,25 +50,34 @@ type JoinProjection = (a: any, b: any) => any;
 export const join = (
     primary: Readable,
     foreign: Readable,
+    // @ts-ignore
     project: JoinProjection = (p, f) => [p, f],
+    timewindow: number = 1000,
     debug: boolean = false
 ) => {
     const primarySink = primary.pipe(sink());
     const foreignSink = foreign.pipe(sink());
 
-    const primaryKeys: Set<Key> = new Set();
-    const foreignKeys: Set<Key> = new Set();
+    /**
+     * Maybe use maps and delete after a timestamp to achieve
+     *
+     */
+
+    const primaryKeys = new Map();
+    const foreignKeys = new Map();
 
     const output = new ObjectTransform({
         transform: async function joinTransform(key, _, next) {
-
             if (debug) {
                 console.log("key:", key.toString());
                 console.log("primary:", primaryKeys.has(key.toString()));
                 console.log("foreign:", foreignKeys.has(key.toString()));
             }
 
-            if (primaryKeys.has(key.toString()) && foreignKeys.has(key.toString())) {
+            if (
+                primaryKeys.has(key.toString()) &&
+                foreignKeys.has(key.toString())
+            ) {
                 const [p, f] = await Promise.all([
                     primarySink.get(key),
                     foreignSink.get(key)
@@ -64,6 +88,13 @@ export const join = (
                     value: project(p, f)
                 });
             }
+            // left join?
+            if (primaryKeys.has(key.toString())) {
+            }
+
+            // right join?
+            if (foreignKeys.has(key.toString())) {
+            }
 
             next();
         }
@@ -72,18 +103,46 @@ export const join = (
     merge(
         primarySink.pipe(
             tap(key => {
-                primaryKeys.add(key.toString());
+                primaryKeys.set(key.toString(), Date.now().toString());
             })
         ),
         foreignSink.pipe(
             tap(key => {
-                foreignKeys.add(key.toString());
+                foreignKeys.set(key.toString(), Date.now().toString());
             })
         )
     ).pipe(output);
 
+    // this sets up a sliding window join
+    // need to make sure that this doesn't fuck things up
+    setInterval(() => {
+        const currentTimestamp = Date.now();
+        for (const [key, timestamp] of primaryKeys) {
+            const diff = Math.abs(timestamp - currentTimestamp);
+            if (diff > 1000) {
+                primaryKeys.delete(key);
+            }
+        }
+        for (const [key, timestamp] of foreignKeys) {
+            const diff = Math.abs(timestamp - currentTimestamp);
+            if (diff > 1000) {
+                foreignKeys.delete(key);
+            }
+        }
+    }, 1000); // replace me with a decent time
+
     return output;
 };
+
+/**
+ * left join
+ *
+ */
+
+/**
+ * right join
+ */
+
 // export const join = (
 //     primary: Readable,
 //     foreign: Readable,
