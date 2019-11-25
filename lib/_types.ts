@@ -1,8 +1,14 @@
 import { ConsumerConfig } from "kafkajs";
-export interface Message {
-    key: string | Buffer;
-    value: any;
+
+export type Key = string | Buffer;
+
+export interface Message extends KeyValuePair {
     commit?: () => void;
+}
+
+export interface KeyValuePair {
+    key: Key;
+    value: any;
 }
 
 export interface StreamConfig extends ConsumerConfig {
@@ -12,3 +18,5 @@ export interface StreamConfig extends ConsumerConfig {
     autoResume?: boolean;
     resumeAfter?: number;
 }
+
+export type StreamErrorCallback = (error?: Error | null) => void;

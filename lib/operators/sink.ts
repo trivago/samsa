@@ -1,128 +1,96 @@
-import { SinkConfig } from "./sink";
-import { TransformCallback } from "stream";
+import { ObjectWritable } from "../utils/ObjectWritable";
+import { Key, StreamErrorCallback, KeyValuePair } from "../_types";
+
 import levelup, { LevelUp, LevelUpChain } from "levelup";
 import leveldown from "leveldown";
 import { AbstractLevelDOWN } from "abstract-leveldown";
-import { ObjectTransform } from "../utils/ObjectTransform";
 
 export type StoreConfig = LevelUp | AbstractLevelDOWN | string;
 
-export type Key = string | Buffer;
 export interface SinkConfig {
     store?: StoreConfig;
     batchSize?: number;
     highWaterMark?: number;
     batchAge?: number;
 }
-/**
- * Creates a sink connector for storing incoming data by key.
- * @param store A Abstract-LevelDOWN compliant data store
- * @param sinkConfig Configuration for the sink
- */
 
-// sink could potentially return a key-based look up in line with what KTable
-// KTable completely encapsulates its internal storage
-// manages RocksDB internally
-
-class Sink extends ObjectTransform {
+class Sink extends ObjectWritable {
     private batch: LevelUpChain;
-    private keys: Key[] = [];
-    private batchWriteTimeout!: NodeJS.Timeout;
-    private writing: boolean = false;
-
+    // TS doesn't understand when a variable
+    // is set inside a function called inside the constructor :(
+    // @ts-ignore
+    private batchWriteTimeout: NodeJS.Timeout;
+    private _count = 0;
     constructor(
-        private cache: LevelUp,
-        highWaterMark: number,
+        private store: LevelUp,
         private batchSize: number,
-        private batchAge: number
+        private batchAge: number,
+        private highWaterMark?: number
     ) {
         super({
             highWaterMark
         });
 
-        this.batch = this.cache.batch();
+        this.batch = this.store.batch();
         this.startTimer();
     }
 
-    private startTimer() {
-        clearTimeout(this.batchWriteTimeout);
-        this.batchWriteTimeout = setTimeout(async () => {
-            this.pause();
-            await this.writeBatch();
-            this.writeKeys();
-            this.resume();
-        }, this.batchAge);
+    private startTimer() {}
+
+    private async finishBatch() {
+        this.cork();
+
+        await this.batch.write();
+        this.batch = this.store.batch();
+
+        this.uncork();
     }
 
-    private async writeBatch() {
-        if (this.batch.length > 0 && !this.writing) {
-            this.writing = true;
-            await this.batch.write();
-            this.batch = this.cache.batch();
-            this.writing = false;
-        }
-    }
-
-    private writeKeys() {
-        for (const key of this.keys) {
-            this.push(key);
-        }
-        this.keys = [];
-        this.startTimer();
-    }
-
-    private writeToBatch(key: Key, value: any) {
-        if (value === null) {
+    async _write(data: KeyValuePair, _: any, next: StreamErrorCallback) {
+        // get the key and value
+        const { key, value } = data;
+        this._count++;
+        // write the key and value to the batch, if need be
+        if (value == null) {
             this.batch.del(key);
-            this.keys = this.keys.filter(k => k === key);
         } else {
             this.batch.put(key, value);
-            this.keys.push(key);
         }
+        // if the batch length is greater than the max, clear the timer and write the batch
+        if (this.batch.length === this.batchSize) {
+            clearTimeout(this.batchWriteTimeout);
+            await this.finishBatch();
+        }
+        // else if the batch length is 1, restart the timer
+        else if (this.batch.length === 1) {
+            this.startTimer();
+        }
+        next();
+    }
+
+    async _final(next: StreamErrorCallback) {
+        await this.finishBatch();
+        next();
     }
 
     public get(key: Key) {
         try {
-            return this.cache.get(key);
+            return this.store.get(key);
         } catch (err) {
             if (err.type === "NotFoundError") {
-                return;
+                return null;
             } else {
                 throw err;
             }
         }
     }
 
-    async _transform(data: any, _: any, next: TransformCallback) {
-        const { key, value } = data;
-        try {
-            this.writeToBatch(key, value);
-        } catch (err) {
-            if (err.type === "WriteError") {
-                this.batch = this.cache.batch();
-                this.writeToBatch(key, value);
-            } else {
-                next(err);
-                return;
-            }
-        }
-
-        if (this.batch.length === this.batchSize) {
-            clearTimeout(this.batchWriteTimeout);
-            this.writeBatch();
-            this.writeKeys();
-        } else if (this.batch.length === 1) {
-            clearTimeout(this.batchWriteTimeout);
-            this.startTimer();
-        }
-
-        next();
+    public get count() {
+        return this._count;
     }
-    async _flush(next: TransformCallback) {
-        await this.writeBatch();
-        this.writeKeys();
 
-        next();
+    public get batchInfo() {
+        return this.batch;
     }
 }
 
