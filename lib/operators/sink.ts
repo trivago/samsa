@@ -14,18 +14,17 @@ export interface SinkConfig {
     batchAge?: number;
 }
 
-class Sink extends ObjectWritable {
+class DataSink extends ObjectWritable {
     private batch: LevelUpChain;
     // TS doesn't understand when a variable
     // is set inside a function called inside the constructor :(
     // @ts-ignore
     private batchWriteTimeout: NodeJS.Timeout;
-    private _count = 0;
     constructor(
         private store: LevelUp,
         private batchSize: number,
         private batchAge: number,
-        private highWaterMark?: number
+        highWaterMark?: number
     ) {
         super({
             highWaterMark
@@ -35,12 +34,22 @@ class Sink extends ObjectWritable {
         this.startTimer();
     }
 
-    private startTimer() {}
+    private startTimer() {
+        this.batchWriteTimeout = setTimeout(async () => {
+            await this.finishBatch();
+        }, this.batchAge);
+    }
 
     private async finishBatch() {
         this.cork();
 
-        await this.batch.write();
+        try {
+            await this.batch.write();
+        } catch (err) {
+            if (err.type !== "WriteError") {
+                throw err;
+            }
+        }
         this.batch = this.store.batch();
 
         this.uncork();
@@ -49,17 +58,29 @@ class Sink extends ObjectWritable {
     async _write(data: KeyValuePair, _: any, next: StreamErrorCallback) {
         // get the key and value
         const { key, value } = data;
-        this._count++;
         // write the key and value to the batch, if need be
         if (value == null) {
             this.batch.del(key);
         } else {
-            this.batch.put(key, value);
+            try {
+                this.batch.put(key, value);
+            } catch (err) {
+                if (err.type === "WriteError") {
+                    this.batch = this.store.batch();
+                    this.batch.put(key, value);
+                } else {
+                    return next(err);
+                }
+            }
         }
         // if the batch length is greater than the max, clear the timer and write the batch
         if (this.batch.length === this.batchSize) {
             clearTimeout(this.batchWriteTimeout);
-            await this.finishBatch();
+            try {
+                await this.finishBatch();
+            } catch (err) {
+                return next(err);
+            }
         }
         // else if the batch length is 1, restart the timer
         else if (this.batch.length === 1) {
@@ -69,37 +90,32 @@ class Sink extends ObjectWritable {
     }
 
     async _final(next: StreamErrorCallback) {
-        await this.finishBatch();
-        next();
-    }
-
-    public get(key: Key) {
+        clearTimeout(this.batchWriteTimeout);
         try {
-            return this.store.get(key);
+            await this.finishBatch();
         } catch (err) {
-            if (err.type === "NotFoundError") {
-                return null;
-            } else {
-                throw err;
-            }
+            return next(err);
         }
-    }
-
-    public get count() {
-        return this._count;
-    }
-
-    public get batchInfo() {
-        return this.batch;
+        next();
     }
 }
 
-const NO_MAGIC_NUMBERS = 0;
-let counter = NO_MAGIC_NUMBERS;
+const DEFAULT_CACHE_NAME_BASE = 0;
+let counter = DEFAULT_CACHE_NAME_BASE;
 
+/**
+ * Creates a data sink stream, used as the final storage for a stream.
+ *
+ * Note: This is fundamentally different to my previous attempt at this.
+ * Why?
+ * The previous attempt had the keys coming back at userland code, which is okay for some
+ * things, but in this case, it was a failure point, as the transform would close before
+ * it was writing everything to the store.
+ * @param config
+ */
 export const sink = (config: SinkConfig = {}) => {
     const {
-        store = `.cache-${counter++}`,
+        store = `.sink-${counter++}`,
         batchSize = 100000,
         highWaterMark = 500000,
         batchAge = 300
@@ -115,5 +131,5 @@ export const sink = (config: SinkConfig = {}) => {
         cache = store;
     }
 
-    return new Sink(cache, highWaterMark, batchSize, batchAge);
+    return new DataSink(cache, highWaterMark, batchSize, batchAge);
 };
