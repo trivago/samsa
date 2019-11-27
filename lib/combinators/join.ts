@@ -18,6 +18,7 @@ import { merge } from ".";
 //  */
 
 type JoinProjection<P extends any, F extends any, R extends any> = (
+    k: Key,
     p: P,
     f: F
 ) => R;
@@ -28,7 +29,7 @@ const defaultProjection: JoinProjection<
     any,
     any,
     { primary: any; foreign: any }
-> = (primary, foreign) => ({ primary, foreign });
+> = (key, primary, foreign) => ({ key, primary, foreign });
 
 const storeKey = (store: KeyMap) =>
     tap((key: Key) => {
@@ -50,26 +51,37 @@ const startCleanupLoop = (timeWindow: number, ...maps: KeyMap[]) => {
     }, timeWindow);
 };
 
+interface KTableConfig {
+    batchSize?: number;
+    batchAge?: number;
+}
+
 export const innerJoin = <P extends any, F extends any, R extends any>(
     primaryStream: Readable,
     foreignStream: Readable,
     project: JoinProjection<P, F, any> = defaultProjection,
-    window: number = 10
+    window: number = 10,
+    kTableConfig: KTableConfig = {}
 ) => {
+    const { batchAge, batchSize } = kTableConfig;
     const primaryKeyMap: KeyMap = new Map();
     const foreignKeyMap: KeyMap = new Map();
 
-    const primaryTable = new KTable();
-    const foreignTable = new KTable();
+    const primaryTable = new KTable(batchSize, batchAge);
+    const foreignTable = new KTable(batchSize, batchAge);
 
     const seenBoth = (key: Key) =>
         primaryKeyMap.has(key.toString()) && foreignKeyMap.has(key.toString());
 
-    const cleanupLoop = startCleanupLoop(
-        window * 1000,
-        primaryKeyMap,
-        foreignKeyMap
-    );
+    let cleanupLoop: NodeJS.Timeout;
+
+    if (window > 0) {
+        cleanupLoop = startCleanupLoop(
+            window * 1000,
+            primaryKeyMap,
+            foreignKeyMap
+        );
+    }
 
     const joinedOutput = new ObjectTransform({
         transform: async function innerJoinTransform(
@@ -85,7 +97,7 @@ export const innerJoin = <P extends any, F extends any, R extends any>(
                         foreignTable.get(key)
                     ]);
 
-                    this.push(project(pValue, fValue));
+                    this.push(project(key, pValue, fValue));
                 }
 
                 next();
@@ -94,11 +106,15 @@ export const innerJoin = <P extends any, F extends any, R extends any>(
             }
         },
         final(next) {
-            clearInterval(cleanupLoop);
+            if (cleanupLoop) {
+                clearInterval(cleanupLoop);
+            }
             next();
         },
         flush(next) {
-            clearInterval(cleanupLoop);
+            if (cleanupLoop) {
+                clearInterval(cleanupLoop);
+            }
             next();
         }
     });

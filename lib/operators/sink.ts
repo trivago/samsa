@@ -46,6 +46,7 @@ class DataSink extends ObjectWritable {
         try {
             await this.batch.write();
         } catch (err) {
+            console.log(err);
             if (err.type !== "WriteError") {
                 throw err;
             }
@@ -84,6 +85,7 @@ class DataSink extends ObjectWritable {
         }
         // else if the batch length is 1, restart the timer
         else if (this.batch.length === 1) {
+            clearTimeout(this.batchWriteTimeout);
             this.startTimer();
         }
         next();

@@ -4,25 +4,6 @@ import { LevelUp, LevelUpChain, default as levelup } from "levelup";
 
 import { Key, KeyValuePair, StreamErrorCallback } from "../_types";
 import { ObjectTransform } from "../utils/ObjectTransform";
-// public get(key: Key) {
-//     try {
-//         return this.store.get(key);
-//     } catch (err) {
-//         if (err.type === "NotFoundError") {
-//             return null;
-//         } else {
-//             throw err;
-//         }
-//     }
-// }
-
-// public get count() {
-//     return this._count;
-// }
-
-// public get batchInfo() {
-//     return this.batch;
-// }
 
 const DEFAULT_CACHE_NAME_BASE = 0;
 let counter = DEFAULT_CACHE_NAME_BASE;
@@ -32,23 +13,40 @@ export class KTable extends ObjectTransform {
     private batch: LevelUpChain;
     private batchWriteTimeout!: NodeJS.Timeout;
     private keys: Key[];
-
+    // private writing: boolean = false;
     constructor(
         private batchSize: number = 10000,
-        private batchAge: number = 300
+        private batchAge: number = 300,
+        highWaterMark: number = 500000
     ) {
-        super();
-
+        super({
+            highWaterMark
+        });
         this.store = levelup(leveldown(`.cache-${counter++}`));
         this.batch = this.store.batch();
         this.keys = [];
         this.startTimer();
     }
-
     private startTimer() {
         this.batchWriteTimeout = setTimeout(async () => {
             await this.finishBatch();
         }, this.batchAge);
+    }
+
+    private async finishBatch() {
+        this.cork();
+
+        try {
+            await this.batch.write();
+        } catch (err) {
+            if (err.type !== "WriteError") {
+                throw err;
+            }
+        }
+        this.batch = this.store.batch();
+        this.pushKeys();
+
+        this.uncork();
     }
 
     private pushKeys() {
@@ -58,16 +56,8 @@ export class KTable extends ObjectTransform {
         this.keys = [];
     }
 
-    private async finishBatch() {
-        this.cork();
-        await this.batch.write();
-        this.pushKeys();
-        this.uncork();
-    }
-
     async _transform(data: KeyValuePair, _: any, next: TransformCallback) {
         const { key, value } = data;
-
         if (value == null) {
             this.batch.del(key);
             this.keys = this.keys.filter(
@@ -86,15 +76,14 @@ export class KTable extends ObjectTransform {
             }
             this.keys.push(key);
         }
-
         if (this.batch.length > this.batchSize) {
+            clearTimeout(this.batchWriteTimeout);
             await this.finishBatch();
         } else if (this.batch.length === 1) {
             this.startTimer();
         }
         next();
     }
-
     async _final(next: StreamErrorCallback) {
         if (this.batch.length > 0) {
             clearTimeout(this.batchWriteTimeout);
@@ -103,7 +92,6 @@ export class KTable extends ObjectTransform {
         }
         next();
     }
-
     async _flush(next: StreamErrorCallback) {
         if (this.batch.length > 0) {
             clearTimeout(this.batchWriteTimeout);
@@ -112,7 +100,6 @@ export class KTable extends ObjectTransform {
         }
         next();
     }
-
     public get(key: Key) {
         try {
             return this.store.get(key);
