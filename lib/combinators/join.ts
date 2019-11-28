@@ -1,24 +1,17 @@
 import { ObjectTransform } from "./../utils/ObjectTransform";
 
-import { TransformOptions, TransformCallback, Readable } from "stream";
-import { Key, KeyValuePair } from "../_types";
+import { TransformCallback, Readable } from "stream";
+import { Key } from "../_types";
 import { KTable } from "./../kafka/KTable";
 import { tap } from "../operators";
 import { merge } from ".";
 
-// /**
-//  * 2 ktables
-//  * kstream + ktable
-//  *
-//  * kstream - stateless
-//  * ktable - changelog table for a stream (what we have in leveldb, technically)
-//  *
-//  * windowed joins
-//  *  give a windowed view
-//  */
+interface KTableConfig {
+    batchSize?: number;
+    batchAge?: number;
+}
 
 type JoinProjection<P extends any, F extends any, R extends any> = (
-    k: Key,
     p: P,
     f: F
 ) => R;
@@ -29,7 +22,7 @@ const defaultProjection: JoinProjection<
     any,
     any,
     { primary: any; foreign: any }
-> = (key, primary, foreign) => ({ key, primary, foreign });
+> = (primary, foreign) => ({ primary, foreign });
 
 const storeKey = (store: KeyMap) =>
     tap((key: Key) => {
@@ -51,11 +44,15 @@ const startCleanupLoop = (timeWindow: number, ...maps: KeyMap[]) => {
     }, timeWindow);
 };
 
-interface KTableConfig {
-    batchSize?: number;
-    batchAge?: number;
-}
-
+/**
+ * Represents and windowed inner join in a streaming context.
+ *
+ * @param primaryStream The primary stream to read from
+ * @param foreignStream The foreign stream to read from
+ * @param project a projection to be used when values from each stream are found
+ * @param window how long to keep keys in memory
+ * @param kTableConfig optional configuration for the underlying ktables that are used for joins
+ */
 export const innerJoin = <P extends any, F extends any, R extends any>(
     primaryStream: Readable,
     foreignStream: Readable,
@@ -97,7 +94,10 @@ export const innerJoin = <P extends any, F extends any, R extends any>(
                         foreignTable.get(key)
                     ]);
 
-                    this.push(project(key, pValue, fValue));
+                    this.push({
+                        key,
+                        value: project(pValue, fValue)
+                    });
                 }
 
                 next();
@@ -129,4 +129,7 @@ export const innerJoin = <P extends any, F extends any, R extends any>(
 
     return joinedOutput;
 };
+/**
+ * Alias to innerJoin
+ */
 export const join = innerJoin;
