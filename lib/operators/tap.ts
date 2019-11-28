@@ -1,4 +1,4 @@
-import { Transform } from "stream";
+import { ObjectTransform } from "../utils/ObjectTransform";
 
 export type TapCallback = (data: any, encoding?: string) => any;
 
@@ -7,8 +7,7 @@ export type TapCallback = (data: any, encoding?: string) => any;
  * @param callback
  */
 export const tap = (callback: TapCallback) =>
-    new Transform({
-        objectMode: true,
+    new ObjectTransform({
         transform(data, encoding, next) {
             callback(data, encoding);
             this.push(data);

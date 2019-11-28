@@ -1,4 +1,4 @@
-import { Transform } from "stream";
+import { ObjectTransform } from "../utils/ObjectTransform";
 
 /**
  * Skips a given number of objects
@@ -7,8 +7,7 @@ import { Transform } from "stream";
 export const skip = (n: number) => {
     let toSkip = 0;
 
-    return new Transform({
-        objectMode: true,
+    return new ObjectTransform({
         transform(data, _, next) {
             if (toSkip < n) {
                 toSkip++;

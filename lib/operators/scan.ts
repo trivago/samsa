@@ -1,4 +1,4 @@
-import { Transform } from "stream";
+import { ObjectTransform } from "../utils/ObjectTransform";
 import { ReduceCallback } from "./reduce";
 
 /**
@@ -12,8 +12,7 @@ export const scan = <T extends any, A extends any>(
 ) => {
     let result = initial;
 
-    return new Transform({
-        objectMode: true,
+    return new ObjectTransform({
         transform(data, encoding, next) {
             result = callback(result as A, data, encoding);
             this.push(result);

@@ -1,4 +1,4 @@
-import { Transform } from "stream";
+import { ObjectTransform } from "../utils/ObjectTransform";
 
 export type ReduceCallback<T extends any, A extends any> = (
     accumulator: A,
@@ -17,15 +17,25 @@ export const reduce = <T extends any, A extends any>(
 ) => {
     let result = initial;
 
-    return new Transform({
-        objectMode: true,
+    return new ObjectTransform({
         transform(data, encoding, next) {
             result = callback(result as any, data, encoding);
             next();
         },
         flush(next) {
             this.push(result);
-            next(null);
+            next();
         }
     });
+    // return new Transform({
+    //     objectMode: true,
+    //     transform(data, encoding, next) {
+    //         result = callback(result as any, data, encoding);
+    //         next();
+    //     },
+    //     flush(next) {
+    //         this.push(result);
+    //         next(null);
+    //     }
+    // });
 };

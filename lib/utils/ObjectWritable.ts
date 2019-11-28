@@ -3,6 +3,9 @@ import { Writable, WritableOptions } from "stream";
 
 type ObjectWritableCallback = (data: any, next: StreamErrorCallback) => void;
 
+/**
+ * A writable stream that accepts objects by default
+ */
 export class ObjectWritable extends Writable {
     constructor(options: WritableOptions = {}) {
         super({
@@ -11,10 +14,3 @@ export class ObjectWritable extends Writable {
         });
     }
 }
-
-export const createObjectWritable = (write: ObjectWritableCallback) =>
-    new ObjectWritable({
-        write(data, _, next) {
-            write(data, next);
-        }
-    });
