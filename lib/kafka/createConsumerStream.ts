@@ -1,4 +1,4 @@
-import { StreamConfig, Message } from "./../_types";
+import { StreamConfig, Message } from "../_types";
 import { Kafka, KafkaConfig, Consumer } from "kafkajs";
 import { Readable } from "stream";
 
