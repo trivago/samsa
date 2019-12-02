@@ -1,6 +1,6 @@
 # Stream Combination Operators
 
--UNNAMED STREAM LIBRARY- comes with the ability to combine multiple streams into a single stream of data, by merging or joining those streams.
+Samsa comes with the ability to combine multiple streams into a single stream of data, by merging or joining those streams.
 
 ## merge
 
