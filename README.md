@@ -1,6 +1,6 @@
-# -UNNAMED STREAM LIBRARY-
+# Samsa
 
--UNNAMED STREAM LIBRARY- is built for making working with, combining, and storing keyed streams of data as ergonomically as possible.
+Samsa is built for making working with, combining, and storing keyed streams of data as ergonomically as possible.
 
 ## Features
 

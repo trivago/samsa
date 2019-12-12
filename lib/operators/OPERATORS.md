@@ -1,6 +1,6 @@
 # Stream Operators
 
--UNNAMED STREAM LIBRARY- comes prepackaged with a few common operators that can be used to filter and transform the data in your stream. It also comes with the ability to store the date contained in your stream into a [data sink](#sink).
+Samsa comes prepackaged with a few common operators that can be used to filter and transform the data in your stream. It also comes with the ability to store the date contained in your stream into a [data sink](#sink).
 
 **Note:** Unless otherwise specified, the last argument to each callback is the encoding of the data, if it is present.
 
@@ -108,7 +108,7 @@ stream.pipe(tap(console.log));
 
 ## sink
 
--UNNAMED STREAM LIBRARY- also provides a handy interface for storing **keyed** data into a data store for later retrieval. Sink works by taking any LevelUp compliant key-value store, batching values and writing periodically to the given store. The resulting stream from sink is a stream of the keys that were stored.
+Samsa also provides a handy interface for storing **keyed** data into a data store for later retrieval. Sink works by taking any LevelUp compliant key-value store, batching values and writing periodically to the given store. The resulting stream from sink is a stream of the keys that were stored.
 
 | argument   | description                                                                             |
 | ---------- | --------------------------------------------------------------------------------------- |
@@ -126,7 +126,7 @@ stream.pipe(tap(console.log));
 ### Example using LevelDB
 
 ```js
-import { sink } from "-UNNAMED STREAM LIBRARY-";
+import { sink } from "Samsa";
 import levelup from "levelup";
 import leveldown from "leveldown";
 

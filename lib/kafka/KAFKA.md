@@ -1,6 +1,6 @@
 # Kafka Streams
 
--UNNAMED STREAM LIBRARY- exports a function<!-- s --> for handling creation of a topic consumer <!-- and producer --> from a kafka stream topic. Right now, this is powered by KafkaJS.
+Samsa exports a function<!-- s --> for handling creation of a topic consumer <!-- and producer --> from a kafka stream topic. Right now, this is powered by KafkaJS.
 
 ## createConsumerStream
 
