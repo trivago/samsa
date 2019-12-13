@@ -22,6 +22,7 @@
     "levelup": "^4.3.2"
   },
   "scripts": {
+    "prepublish": "yarn test && yarn build", 
     "build": "tsc",
     "test": "jest"
   }
