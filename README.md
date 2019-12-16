@@ -28,19 +28,31 @@ Samsa is a high level Node.js stream processing library inspired by other reacti
 
 ## Usage
 
-```
+```javascript
 
 
 ```
+
+## Operators
+
+Samsa offers many different operators designed to make working with your data easier. The most common operators are `map` `filter` `reduce`. A full listing of operators and how to create your own can be found in <!--add docs link here-->.
+
+### Example
 
 ## Data Sink
 
+The `sink` operator is offered as a way to quickly store any data that is stored in a stream as a key-value pair into any [AbstractLevelDown](https://github.com/Level/abstract-leveldown) compliant store. This could be LevelDB, a wrapped versioj of Redis, or xour own implementation, so long as it works with LevelUp.
+
+```javascript
+
+```
+
 ## Usage with Kafka Streams
 
-Samsa also works a stream processor for [Kafka Streams](https://kafka.apache.org/documentation/streams/). Though not a 1:1 port of the Kafka Streams, Samsa offers the ability to process, join, and store the streams in any [AbstractLevelDown](https://github.com/Level/abstract-leveldown) compliant store, such as RedisDown
+Samsa also works a stream processor for [Kafka Streams](https://kafka.apache.org/documentation/streams/). Though not a 1:1 port of the Kafka Streams, Samsa offers the ability to process, join, and store the streams in any [AbstractLevelDown](https://github.com/Level/abstract-leveldown) compliant store, such as [RedisDown](https://github.com/hmalphettes/redisdown). 
+
+```javascript
 
 ```
 
-```
 
-##
