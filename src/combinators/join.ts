@@ -53,15 +53,6 @@ const startCleanupLoop = (timeWindow: number, ...maps: KeyMap[]) => {
  * @param window how long to keep keys in memory
  * @param kTableConfig optional configuration for the underlying ktables that are used for joins
  */
-
-/**
- * NOTE TO SELF/INVESTIGATION POINT:
- *
- * Could we potentially use web-workers to handle the
- * storing of keys? Or would that be to slow? It feels
- * like the storage of keys might be better suited to a
- * non-main loop operation, to conserve memory usage.
- */
 export const innerJoin = <P extends any, F extends any, R extends any>(
     primaryStream: Readable,
     foreignStream: Readable,
