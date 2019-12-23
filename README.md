@@ -10,7 +10,7 @@ Samsa is a high level Node.js stream processing library inspired by other reacti
 
 ## Usage
 
-## Operators
+## Stream Operations
 
 Samsa offers many different operators designed to make working with your streams easier, the most common operators being `map`, `filter`, and `reduce`. A full listing of operators and how to create your own can be found in [Operators.md](./docs/Operators.md).
 
@@ -35,9 +35,32 @@ usersUnder18.on('data', console.log)
 
 ```
 
+## Stream Combination
+
+Samsa also offers the ability to combine streams of data in different ways. At the moment only merging and joining of keyed streams is supported. More information can be found in [Combinators.md](./docs/Combinators.md).
+
+In this example, we want to join a stream of request logs to a stream of response logs
+
+```javascript
+import { join, sink } from "@trivago/samsa";
+
+const requestLog = getRequestLog();
+
+const responseLog = getResponseLog();
+
+// join takes a projection to tell how to combine the joined values
+const projection = (req, res) => {
+    req, res;
+};
+
+const reqResLog = join(requestLog, responseLog, projection);
+
+reqResLog.pipe(sink("my-req-res-sink"));
+```
+
 ## Data Sink
 
-The `sink` operator is offered as a way to quickly store any data that is stored in a stream as a key-value pair into any [AbstractLevelDown](https://github.com/Level/abstract-leveldown) compliant store. This could be LevelDB, a wrapped versioj of Redis, or xour own implementation, so long as it works with LevelUp.
+The `sink` operator is offered as a way to quickly store any data that is stored in a stream as a key-value pair into any [AbstractLevelDown](https://github.com/Level/abstract-leveldown) compliant store. This could be LevelDB, a wrapped versioj of Redis, or xour own implementation, so long as it works with LevelUp. You can find more information in [DataSink.md](./docs/DataSink.md).
 
 In this example, we map a CSV stream to key-value pairs and then store it into a LevelDB instance for later retrieval.
 
