@@ -2,108 +2,58 @@
 
 # Stream Operators
 
-Samsa comes prepackaged with a few common operators that can be used to filter and transform the data in your stream. It also comes with the ability to store the date contained in your stream into a [data sink](#sink).
-
-**Note:** Unless otherwise specified, the last argument to each callback is the encoding of the data, if it is present.
+Samsa comes prepackaged with a few common operators that can be used to filter and transform the data in your stream.
 
 ## map
 
-Projects incoming data to a new value
+Projects incoming values to a new value
 
-| argument | description                                                |
-| -------- | ---------------------------------------------------------- |
-| project  | projection function that receives the data from the stream |
-
-### usage
-
-```js
-streamOfNumbers.pipe(map(n => n * 2));
-```
+| argument | description                                       |
+| -------- | ------------------------------------------------- |
+| project  | projection function that transforms incoming data |
 
 ## filter
 
-Removes data from the stream that does not pass the given predicate
+Removes values from a stream that do not satisfy the given predicate
 
-| argument  | description                                               |
-| --------- | --------------------------------------------------------- |
-| predicate | predicate function that receives the data from the stream |
-
-### usage
-
-```js
-streamOfNumbers.pipe(filter(n => n % 2 === 0));
-```
+| argument  | description                                                                                            |
+| --------- | ------------------------------------------------------------------------------------------------------ |
+| predicate | function that returns true for values that should be kept, and false for values that should be removed |
 
 ## reduce
 
-Reduce the incoming data to a single value.
+Combine incoming data into a single value, returning the accumulated value after all data has been processed.
 
-**Note:** The value will not be passed until all data has been read
-
-| argument    | description                                          |
-| ----------- | ---------------------------------------------------- |
-| accumulator | accumulator function that is run for each data point |
-| initial     | the initial value of the accumulator                 |
-
-### usage
-
-```js
-streamOfNumbers.pipe(reduce((acc, val) => acc + val, 0));
-```
+| argument    | description                                                             |
+| ----------- | ----------------------------------------------------------------------- |
+| accumulator | function run for each value in the stream. Signature: (acc, val) => val |
+| initial     | the initial value for the accumulator                                   |
 
 ## scan
 
-Similar to reduce, but returns the value being accumulated over time
+Combine incoming data into a single value over time, returning the accumulated value after each value in the stream has been processed.
 
-| argument    | description                                          |
-| ----------- | ---------------------------------------------------- |
-| accumulator | accumulator function that is run for each data point |
-| initial     | the initial value of the accumulator                 |
-
-### usage
-
-```js
-stream.pipe(scan((acc, val) => acc + val, 0));
-```
+| argument    | description                                                             |
+| ----------- | ----------------------------------------------------------------------- |
+| accumulator | function run for each value in the stream. Signature: (acc, val) => val |
+| initial     | the initial value for the accumulator                                   |
 
 ## skip
 
-Skips the first `n` number of data chunks
+Skips the first `n` number of values from the stream.
 
 | argument | description              |
 | -------- | ------------------------ |
-| toSkip   | number of values to skip |
-
-### usage
-
-```js
-stream.pipe(skip(10));
-```
+| n        | number of values to skip |
 
 ## skipFirst
 
-Skips the first chunk of data
-
-| argument | description |
-| -------- | ----------- |
-|          |             |
-
-### usage
-
-```js
-stream.pipe(skipFirst());
-```
+Skips the first value from the stream
 
 ## tap
 
-Peform some action or side effect related to the incoming data
+Perform some action or side effect based on each value from the stream
 
-| argument   | description                                                       |
-| ---------- | ----------------------------------------------------------------- |
-| sideEffect | side effect function that performs some side effect with the data |
-
-### usage
-
-```js
-stream.pipe(tap(console.log));
-```
+| argument   | description                 |
+| ---------- | --------------------------- |
+| sideEffect | side effect to be performed |
