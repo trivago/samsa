@@ -60,7 +60,7 @@ reqResLog.pipe(sink("my-req-res-sink"));
 
 ## Data Sink
 
-The `sink` operator is offered as a way to quickly store any data that is stored in a stream as a key-value pair into any [AbstractLevelDown](https://github.com/Level/abstract-leveldown) compliant store. This could be LevelDB, a wrapped versioj of Redis, or xour own implementation, so long as it works with LevelUp. You can find more information in [DataSink.md](./docs/DataSink.md).
+The `sink` operator is offered as a way to quickly store any data that is stored in a stream as a key-value pair into any [AbstractLevelDown](https://github.com/Level/abstract-leveldown) compliant store. This could be LevelDB, a wrapped version of Redis, or your own implementation, so long as it works with LevelUp. You can find more information in [DataSink.md](./docs/DataSink.md).
 
 In this example, we map a CSV stream to key-value pairs and then store it into a LevelDB instance for later retrieval.
 

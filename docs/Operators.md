@@ -107,36 +107,3 @@ Peform some action or side effect related to the incoming data
 ```js
 stream.pipe(tap(console.log));
 ```
-
-## sink
-
-Samsa also provides a handy interface for storing **keyed** data into a data store for later retrieval. Sink works by taking any LevelUp compliant key-value store, batching values and writing periodically to the given store. The resulting stream from sink is a stream of the keys that were stored.
-
-| argument   | description                                                                             |
-| ---------- | --------------------------------------------------------------------------------------- |
-| store      | instance of LevelUp or any AbstractLevelDOWN compliant store                            |
-| sinkConfig | optional configuration relating to how quickly the sink should write to the given store |
-
-### Supported sink configuration options
-
-| option        | default | description                                                         |
-| ------------- | ------- | ------------------------------------------------------------------- |
-| maxBatchSize  | 10k     | the number of data chunks to buffer before writing to the store     |
-| highWaterMark | 500k    | the number of data chunks to buffer before emitting a `pause` event |
-| batchAge      | 1000ms  | the interval of time to write the batch                             |
-
-### Example using LevelDB
-
-```js
-import { sink } from "Samsa";
-import levelup from "levelup";
-import leveldown from "leveldown";
-
-const store = levelup(leveldown("./path/to/store"));
-
-const keyedStream = createKeyedStream();
-
-keyedStream.pipe(sink(store));
-```
-
-[More information about LevelUp and writing your own store](https://github.com/Level/levelup).
