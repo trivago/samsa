@@ -57,7 +57,7 @@ export const innerJoin = <P extends any, F extends any, R extends any>(
     primaryStream: Readable,
     foreignStream: Readable,
     project: JoinProjection<P, F, any> = defaultProjection,
-    window: number = 10,
+    window: number = 0,
     kTableConfig: KTableConfig = {}
 ) => {
     const { batchAge, batchSize } = kTableConfig;

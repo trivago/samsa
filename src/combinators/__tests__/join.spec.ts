@@ -4,8 +4,10 @@ import { join } from "../join";
 describe("Combinator: join", () => {
     const _expected = Array.from(Array(10), (_, i) => ({
         key: i,
-        primary: Buffer.from(i.toString()),
-        foreign: Buffer.from(i.toString())
+        value: {
+            primary: Buffer.from(i.toString()),
+            foreign: Buffer.from(i.toString())
+        }
     }));
     it("should join 2 streams by key", done => {
         const stream1 = createReadStream(true);
