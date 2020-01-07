@@ -1,18 +1,11 @@
 import { ObjectWritable } from "../utils/ObjectWritable";
-import { Key, StreamErrorCallback, KeyValuePair } from "../_types";
+import { StreamErrorCallback, KeyValuePair } from "../_types";
 
 import levelup, { LevelUp, LevelUpChain } from "levelup";
 import leveldown from "leveldown";
 import { AbstractLevelDOWN } from "abstract-leveldown";
 
-export type StoreConfig = LevelUp | AbstractLevelDOWN | string;
-
-export interface SinkConfig {
-    store?: StoreConfig;
-    batchSize?: number;
-    highWaterMark?: number;
-    batchAge?: number;
-}
+import { SinkConfig } from "../_types";
 
 class DataSink extends ObjectWritable {
     private batch: LevelUpChain;

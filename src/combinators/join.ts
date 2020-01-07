@@ -1,22 +1,10 @@
 import { ObjectTransform } from "../utils/ObjectTransform";
 
 import { TransformCallback, Readable } from "stream";
-import { Key } from "../_types";
+import { Key, KTableConfig, JoinProjection, KeyMap } from "../_types";
 import { KTable } from "../kafka/KTable";
 import { tap } from "../operators";
 import { merge } from "./merge";
-
-export interface KTableConfig {
-    batchSize?: number;
-    batchAge?: number;
-}
-
-export type JoinProjection<P extends any, F extends any, R extends any> = (
-    primary: P,
-    foreign: F
-) => R;
-
-type KeyMap = Map<Key, number>;
 
 const defaultProjection: JoinProjection<
     any,
