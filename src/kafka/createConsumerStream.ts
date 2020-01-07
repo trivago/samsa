@@ -133,13 +133,12 @@ export const createConsumerStream = async (
         ...consumerConfig
     } = streamConfig;
 
-    const client =
-        kafkaClientOrConfig instanceof Kafka
-            ? kafkaClientOrConfig
-            : new Kafka(kafkaClientOrConfig);
+    const client = kafkaClientOrConfig?.constructor?.name === 'Client'
+        ? kafkaClientOrConfig
+        : new Kafka(kafkaClientOrConfig as KafkaConfig);
 
     // create our consumer
-    const consumer = client.consumer(consumerConfig);
+    const consumer = (client as Kafka).consumer(consumerConfig);
 
     // connect our consumer and subscribe
     await consumer.connect();

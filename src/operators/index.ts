@@ -7,4 +7,4 @@ export { scan } from "./scan";
 export { skip } from "./skip";
 export { skipFirst } from "./skipFirst";
 
-export { SinkConfig, sink } from "./sink";
+export { sink } from "./sink";
