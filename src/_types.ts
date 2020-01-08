@@ -19,6 +19,16 @@ export interface KeyValuePair {
     value: any;
 }
 
+export interface ProducerKeyValuePair {
+    key?: Key;
+    value: any;
+    headers?: {
+        [key: string]: Buffer;
+    };
+    partition?: number;
+    timestamp?: string;
+}
+
 /**
  * Describes a key value pair coming from KafkaJS, optionally contains the ability
  * to tell KafkaJS that a KVPair has been used and the offset should be committed.
