@@ -8,3 +8,7 @@ export { skip } from "./skip";
 export { skipFirst } from "./skipFirst";
 
 export { sink } from "./sink";
+
+export { flatMap, mergeMap } from "./mergeMap";
+export { switchMap } from "./switchMap";
+export { concatMap } from "./concatMap";

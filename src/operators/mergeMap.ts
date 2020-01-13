@@ -59,3 +59,5 @@ export const mergeMap = (project: (t: any) => Readable) => {
 
     return out;
 };
+
+export const flatMap = mergeMap;

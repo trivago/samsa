@@ -1,5 +1,3 @@
-# Operators
-
 # Stream Operators
 
 Samsa comes prepackaged with a few common operators that can be used to filter and transform the data in your stream.
@@ -58,6 +56,26 @@ Perform some action or side effect based on each value from the stream
 | ---------- | --------------------------- |
 | sideEffect | side effect to be performed |
 
-## mergeMap
+## mergeMap / flatMap
 
-Map values to a new stream and continue reading from that stream.
+Maps incoming values to a new stream, emitting the values emitted by the new stream.
+
+| argument | description                                                   |
+| -------- | ------------------------------------------------------------- |
+| project  | function that produces a new stream, based on the given value |
+
+## switchMap
+
+Maps incoming values to a new stream, stopping the previous stream, and emitting values emitted by the new stream.
+
+| argument | description                                                   |
+| -------- | ------------------------------------------------------------- |
+| project  | function that produces a new stream, based on the given value |
+
+## concatMap
+
+Maps incoming values to a new stream, emitting all values from the new stream, then mapping the next value
+
+| argument | description                                                   |
+| -------- | ------------------------------------------------------------- |
+| project  | function that produces a new stream, based on the given value |
