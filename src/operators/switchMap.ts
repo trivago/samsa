@@ -1,11 +1,6 @@
 import { ObjectTransform } from "../utils/ObjectTransform";
 import { Readable, TransformCallback } from "stream";
 
-interface CurrentReader {
-    reader: Readable;
-    listener: (chunk: any) => void;
-}
-
 export const switchMap = (project: (t: any) => Readable) => {
     let currentReader: Readable | null = null;
 
