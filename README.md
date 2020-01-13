@@ -5,6 +5,7 @@ Samsa is a high level Node.js stream processing library inspired by other reacti
 ## Features
 
 -   Functional Node.js stream operators
+-   Stream creators
 -   Data sink connector, built on top of [LevelUp](https://github.com/level/levelup)
 -   Kafka Stream consumers
 
