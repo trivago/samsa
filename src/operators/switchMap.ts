@@ -3,7 +3,7 @@ import { ObjectReadable } from "../utils/ObjectReadable";
 import { ObjectTransform } from "../utils/ObjectTransform";
 
 export const switchMap = (project: (t: any) => Readable) => {
-    let streamRegister: Readable[];
+    let streamRegister: Readable[] = [];
 
     const out = new ObjectTransform({
         transform(data, _: any, next: TransformCallback) {
@@ -25,6 +25,36 @@ export const switchMap = (project: (t: any) => Readable) => {
 
             return next();
         }
+    });
+
+    out.on("pipe", source => {
+        source.on("end", () => {
+            /**
+             * I'm so sorry.
+             *
+             * What the hell is happening here?
+             *
+             * This is a hack that prevents our source from forcing
+             * our downstream to end. The problem is that if our source
+             * stream ends while our stream register is still full, the
+             * output stream will error out without emitting the remaining
+             * values
+             *
+             * Example:
+             *
+             * range(0,20)
+             *   .pipe(
+             *      switchMap(n => range(0,20))
+             *   )
+             *
+             * This should output 0..20 20 times. Without the below hack, this
+             * will fail once the first range is finished.
+             */
+            // @ts-ignore
+            out._readableState.ended = false;
+            // @ts-ignore
+            out._writableState.ended = false;
+        });
     });
 
     return out;
