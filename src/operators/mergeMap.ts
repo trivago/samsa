@@ -2,7 +2,7 @@ import { Readable, TransformCallback } from "stream";
 import { ObjectReadable } from "../utils/ObjectReadable";
 import { ObjectTransform } from "../utils/ObjectTransform";
 
-export const switchMap = (project: (t: any) => Readable) => {
+export const mergeMap = (project: (t: any) => Readable) => {
     let streamRegister: Readable[] = [];
 
     const out = new ObjectTransform({
@@ -44,7 +44,7 @@ export const switchMap = (project: (t: any) => Readable) => {
              *
              * range(0,20)
              *   .pipe(
-             *      switchMap(n => range(0,20))
+             *      mergeMap(n => range(0,20))
              *   )
              *
              * This should output 0..20 20 times. Without the below hack, this

@@ -1,14 +1,14 @@
 import { createReadStream } from "./stream.setup";
-import { switchMap } from "../switchMap";
+import { mergeMap } from "../mergeMap";
 
-describe("Operator: switchMap", () => {
+describe("Operator: mergeMap", () => {
     it("Should switch to a new stream", done => {
         expect.assertions(1);
 
         const stream = createReadStream(1);
 
         const switchedStream = stream.pipe(
-            switchMap(n => {
+            mergeMap(n => {
                 return createReadStream(3);
             })
             // { end: false }
@@ -32,7 +32,7 @@ describe("Operator: switchMap", () => {
         const stream = createReadStream(3);
 
         const switchedStream = stream.pipe(
-            switchMap(n => {
+            mergeMap(n => {
                 return createReadStream(3);
             })
         );
@@ -54,7 +54,7 @@ describe("Operator: switchMap", () => {
         const stream = createReadStream(100);
 
         const switchedStream = stream.pipe(
-            switchMap(n => {
+            mergeMap(n => {
                 return createReadStream(100);
             })
         );

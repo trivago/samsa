@@ -57,3 +57,7 @@ Perform some action or side effect based on each value from the stream
 | argument   | description                 |
 | ---------- | --------------------------- |
 | sideEffect | side effect to be performed |
+
+## mergeMap
+
+Map values to a new stream and continue reading from that stream.
