@@ -7,7 +7,7 @@ describe("Operator: mergeMap", () => {
 
         const stream = createReadStream(1);
 
-        const switchedStream = stream.pipe(
+        const mappedStream = stream.pipe(
             mergeMap(n => {
                 return createReadStream(3);
             })
@@ -16,11 +16,11 @@ describe("Operator: mergeMap", () => {
 
         const actualOutput: number[] = [];
 
-        switchedStream.on("data", data => {
+        mappedStream.on("data", data => {
             actualOutput.push(data);
         });
 
-        switchedStream.on("end", () => {
+        mappedStream.on("end", () => {
             expect(actualOutput).toEqual([0, 1, 2]);
             done();
         });
@@ -31,7 +31,7 @@ describe("Operator: mergeMap", () => {
 
         const stream = createReadStream(3);
 
-        const switchedStream = stream.pipe(
+        const mappedStream = stream.pipe(
             mergeMap(n => {
                 return createReadStream(3);
             })
@@ -39,11 +39,11 @@ describe("Operator: mergeMap", () => {
 
         const actualOutput: number[] = [];
 
-        switchedStream.on("data", data => {
+        mappedStream.on("data", data => {
             actualOutput.push(data);
         });
 
-        switchedStream.on("end", () => {
+        mappedStream.on("end", () => {
             expect(actualOutput).toEqual([0, 1, 2, 0, 1, 2, 0, 1, 2]);
             done();
         });
@@ -53,7 +53,7 @@ describe("Operator: mergeMap", () => {
         expect.assertions(1);
         const stream = createReadStream(100);
 
-        const switchedStream = stream.pipe(
+        const mappedStream = stream.pipe(
             mergeMap(n => {
                 return createReadStream(100);
             })
@@ -61,11 +61,11 @@ describe("Operator: mergeMap", () => {
 
         const actualOutput: number[] = [];
 
-        switchedStream.on("data", data => {
+        mappedStream.on("data", data => {
             actualOutput.push(data);
         });
 
-        switchedStream.on("end", () => {
+        mappedStream.on("end", () => {
             expect(actualOutput).toEqual(
                 Array.from(Array(100), () =>
                     Array.from(Array(100), (_, i) => i)
