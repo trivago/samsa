@@ -52,4 +52,28 @@ describe("Creator: from", () => {
             done();
         });
     });
+
+    it("should accept a generator", done => {
+        expect.assertions(1);
+
+        const input = function*() {
+            let count = 0;
+            while (count++ < 10) {
+                yield count;
+            }
+        };
+
+        const fromGenerator = from(input());
+
+        const actualOutput: number[] = [];
+
+        fromGenerator.on("data", data => {
+            actualOutput.push(data);
+        });
+
+        fromGenerator.on("end", () => {
+            expect(actualOutput).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+            done();
+        });
+    });
 });
