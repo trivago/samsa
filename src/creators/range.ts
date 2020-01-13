@@ -6,7 +6,7 @@ export const range = (min: number, max: number) => {
         read() {
             this.push(counter);
             counter++;
-            if (counter === max) {
+            if (counter > max) {
                 this.push(null);
             }
         }
