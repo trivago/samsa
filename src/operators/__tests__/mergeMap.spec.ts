@@ -69,7 +69,7 @@ describe("Operator: mergeMap", () => {
             expect(actualOutput).toEqual(
                 Array.from(Array(100), () =>
                     Array.from(Array(100), (_, i) => i)
-                ).reduce((acc, val) => acc.concat(val))
+                ).reduce((acc, val) => acc.concat(val), [])
             );
             done();
         });
