@@ -2,7 +2,7 @@ import { createReadStream } from "./stream.setup";
 import { mergeMap } from "../mergeMap";
 
 describe("Operator: mergeMap", () => {
-    it("Should switch to a new stream", done => {
+    it("Should merge to a new stream", done => {
         expect.assertions(1);
 
         const stream = createReadStream(1);
@@ -26,7 +26,7 @@ describe("Operator: mergeMap", () => {
         });
     });
 
-    it("Should switch to a new stream multiple times", done => {
+    it("Should merge multiple new streams", done => {
         expect.assertions(1);
 
         const stream = createReadStream(3);
@@ -49,7 +49,7 @@ describe("Operator: mergeMap", () => {
         });
     });
 
-    it("should switch to a new stream a lot of times", done => {
+    it("should merge lots of new streams", done => {
         expect.assertions(1);
         const stream = createReadStream(100);
 
