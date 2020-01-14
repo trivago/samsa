@@ -5,6 +5,12 @@
 -   Features
 -   Bug Fixes
 
+## v0.2.1
+
+-   Bug Fixes
+    -   fixed a bug where typings were not working as intended
+    -   changed to export each individual function, instead of uisng the \* export
+
 ## v0.2.0
 
 -   Features
