@@ -19,6 +19,10 @@ export const concatMap = (project: (t: any) => Readable) => {
                 this.uncork();
             });
 
+            reader.on("error", err => {
+                this.emit("error", err);
+            });
+
             next();
         }
     });
