@@ -36,7 +36,7 @@ usersUnder18.on('data', console.log)
 
 ## Stream Creation
 
-Samsa offers the ability to to create various kinds of basic streams, as well as the ability to wrap values, such as promises, arrays or iterables in a stream. More information can be found in [Creators.md](./docs/Creators.md).
+Samsa offers the ability to create various kinds of basic streams, as well as the ability to wrap values, such as promises, arrays or iterables in a stream. More information can be found in [Creators.md](./docs/Creators.md).
 
 ```javascript
 import { from } from '@trivago/samsa';
