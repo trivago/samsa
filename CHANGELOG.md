@@ -5,6 +5,11 @@
 -   Features
 -   Bug Fixes
 
+## v0.2.3
+
+- Bug Fixes
+    - Fixed a bug where joined messages weren't being output
+
 ## v0.2.2
 
 - Bug Fixes
