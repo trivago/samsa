@@ -94,7 +94,7 @@ export const innerJoin = <P extends any, F extends any, R extends any>(
 
             buffer = [];
 
-            for (const key of buffer) {
+            for (const key of toCheck) {
                 if (seenBoth(key)) {
                     // we should have both in our ktables
                     const [pValue, fValue] = await Promise.all([
