@@ -5,7 +5,6 @@ import { Key, KTableConfig, JoinProjection, KeyMap } from "../_types";
 import { KTable } from "../kafka/KTable";
 import { tap } from "../operators";
 import { merge } from "./merge";
-import { ObjectDuplex } from "../utils/ObjectDuplex";
 
 const defaultProjection: JoinProjection<
     any,
@@ -49,7 +48,6 @@ export const innerJoin = <P extends any, F extends any, R extends any>(
     window: number = 0,
     kTableConfig: KTableConfig = {}
 ) => {
-    let buffer: Key[] = [];
     const { batchAge, batchSize } = kTableConfig;
     const primaryKeyMap: KeyMap = new Map();
     const foreignKeyMap: KeyMap = new Map();
@@ -70,45 +68,44 @@ export const innerJoin = <P extends any, F extends any, R extends any>(
         );
     }
 
-    const joinedOutput = new ObjectDuplex({
-        read() {},
-        write: async function innerJoinDuplexWrite(
+    const joinedOutput = new ObjectTransform({
+        transform: async function innerJoinTransform(
             key: Key,
             _: any,
             next: TransformCallback
         ) {
-            buffer.push(key);
-            next();
-        },
-        final(next) {
-            if (cleanupLoop) {
-                clearInterval(cleanupLoop);
-            }
-            next();
-        }
-    });
-
-    let interval = setInterval(async () => {
-        try {
-            const toCheck = [...buffer];
-
-            buffer = [];
-
-            for (const key of toCheck) {
+            try {
                 if (seenBoth(key)) {
                     // we should have both in our ktables
                     const [pValue, fValue] = await Promise.all([
                         primaryTable.get(key),
                         foreignTable.get(key)
                     ]);
-                    joinedOutput.push({
+
+                    this.push({
                         key,
                         value: project(pValue, fValue)
                     });
                 }
+
+                next();
+            } catch (err) {
+                next(err);
             }
-        } catch (err) {}
-    }, 300);
+        },
+        final(next) {
+            if (cleanupLoop) {
+                clearInterval(cleanupLoop);
+            }
+            next();
+        },
+        flush(next) {
+            if (cleanupLoop) {
+                clearInterval(cleanupLoop);
+            }
+            next();
+        }
+    });
 
     const primaryKeyStream = primaryStream.pipe(primaryTable);
     const foreignKeyStream = foreignStream.pipe(foreignTable);

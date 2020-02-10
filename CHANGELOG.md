@@ -5,6 +5,11 @@
 -   Features
 -   Bug Fixes
 
+## v0.2.4
+
+- Rollback
+    - Rollback v0.2.2 and v0.2.3, the memory fix didn't help strangely
+
 ## v0.2.3
 
 - Bug Fixes
