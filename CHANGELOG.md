@@ -5,6 +5,11 @@
 -   Features
 -   Bug Fixes
 
+## v0.2.2
+
+- Bug Fixes
+    - Changed join from transform to duplex to try and combat memory usage issues
+
 ## v0.2.1
 
 -   Bug Fixes
