@@ -1,5 +1,5 @@
 import { ObjectTransform } from "../utils/ObjectTransform";
-
+import { fork, ChildProcess } from "child_process";
 import { TransformCallback, Readable } from "stream";
 import { Key, KTableConfig, JoinProjection, KeyMap } from "../_types";
 import { KTable } from "../kafka/KTable";
@@ -12,25 +12,25 @@ const defaultProjection: JoinProjection<
     { primary: any; foreign: any }
 > = (primary, foreign) => ({ primary, foreign });
 
-const storeKey = (store: KeyMap) =>
-    tap((key: Key) => {
-        store.set(key.toString(), Date.now());
-    });
+// const storeKey = (store: KeyMap) =>
+//     tap((key: Key) => {
+//         store.set(key.toString(), Date.now());
+//     });
 
-const startCleanupLoop = (timeWindow: number, ...maps: KeyMap[]) => {
-    const now = Date.now();
-    return setInterval(() => {
-        for (const keyMap of maps) {
-            for (const [key, timestamp] of keyMap) {
-                const timeDiff = Math.abs(now - timestamp);
+// const startCleanupLoop = (timeWindow: number, ...maps: KeyMap[]) => {
+//     const now = Date.now();
+//     return setInterval(() => {
+//         for (const keyMap of maps) {
+//             for (const [key, timestamp] of keyMap) {
+//                 const timeDiff = Math.abs(now - timestamp);
 
-                if (timeDiff > timeWindow) {
-                    keyMap.delete(key);
-                }
-            }
-        }
-    }, timeWindow);
-};
+//                 if (timeDiff > timeWindow) {
+//                     keyMap.delete(key);
+//                 }
+//             }
+//         }
+//     }, timeWindow);
+// };
 
 /**
  * Represents and windowed inner join in a streaming context.
@@ -49,24 +49,51 @@ export const innerJoin = <P extends any, F extends any, R extends any>(
     kTableConfig: KTableConfig = {}
 ) => {
     const { batchAge, batchSize } = kTableConfig;
-    const primaryKeyMap: KeyMap = new Map();
-    const foreignKeyMap: KeyMap = new Map();
+    // const primaryKeyMap: KeyMap = new Map();
+    // const foreignKeyMap: KeyMap = new Map();
+
+    let processes: ChildProcess[] = [];
 
     const primaryTable = new KTable(batchSize, batchAge);
     const foreignTable = new KTable(batchSize, batchAge);
 
-    const seenBoth = (key: Key) =>
-        primaryKeyMap.has(key.toString()) && foreignKeyMap.has(key.toString());
+    let buffer: Key[] = [];
 
-    let cleanupLoop: NodeJS.Timeout;
+    // const seenBoth = (key: Key) =>
+    //     primaryKeyMap.has(key.toString()) && foreignKeyMap.has(key.toString());
 
-    if (window > 0) {
-        cleanupLoop = startCleanupLoop(
-            window * 1000,
-            primaryKeyMap,
-            foreignKeyMap
-        );
-    }
+    // let cleanupLoop: NodeJS.Timeout;
+
+    // if (window > 0) {
+    //     cleanupLoop = startCleanupLoop(
+    //         window * 1000,
+    //         primaryKeyMap,
+    //         foreignKeyMap
+    //     );
+    // }
+
+    const int = setInterval(() => {
+        const buff = [...buffer];
+
+        const child = fork("checkThings.ts", [
+            primaryTable.storeName,
+            foreignTable.storeName
+        ]);
+
+        child.send(buff);
+
+        child.on("exit", () => {
+            processes = processes.filter(p => p !== child);
+        });
+
+        child.on("error", err => {
+            joinedOutput.destroy(err);
+        });
+
+        child.on("message", ({ primary, foreign }) => {
+            joinedOutput.push(project(primary, foreign));
+        });
+    }, 1000);
 
     const joinedOutput = new ObjectTransform({
         transform: async function innerJoinTransform(
@@ -74,35 +101,31 @@ export const innerJoin = <P extends any, F extends any, R extends any>(
             _: any,
             next: TransformCallback
         ) {
-            try {
-                if (seenBoth(key)) {
-                    // we should have both in our ktables
-                    const [pValue, fValue] = await Promise.all([
-                        primaryTable.get(key),
-                        foreignTable.get(key)
-                    ]);
-
-                    this.push({
-                        key,
-                        value: project(pValue, fValue)
-                    });
-                }
-
-                next();
-            } catch (err) {
-                next(err);
-            }
+            buffer.push(key);
+            next();
+            // try {
+            //     if (seenBoth(key)) {
+            //         // we should have both in our ktables
+            //         const [pValue, fValue] = await Promise.all([
+            //             primaryTable.get(key),
+            //             foreignTable.get(key)
+            //         ]);
+            //         this.push({
+            //             key,
+            //             value: project(pValue, fValue)
+            //         });
+            //     }
+            //     next();
+            // } catch (err) {
+            //     next(err);
+            // }
         },
         final(next) {
-            if (cleanupLoop) {
-                clearInterval(cleanupLoop);
-            }
+            clearInterval(int);
             next();
         },
         flush(next) {
-            if (cleanupLoop) {
-                clearInterval(cleanupLoop);
-            }
+            clearInterval(int);
             next();
         }
     });
@@ -110,10 +133,7 @@ export const innerJoin = <P extends any, F extends any, R extends any>(
     const primaryKeyStream = primaryStream.pipe(primaryTable);
     const foreignKeyStream = foreignStream.pipe(foreignTable);
 
-    merge(
-        primaryKeyStream.pipe(storeKey(primaryKeyMap)),
-        foreignKeyStream.pipe(storeKey(foreignKeyMap))
-    ).pipe(joinedOutput);
+    merge(primaryKeyStream, foreignKeyStream).pipe(joinedOutput);
 
     return joinedOutput;
 };

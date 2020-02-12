@@ -1,5 +1,6 @@
 import { TransformCallback } from "stream";
-import leveldown from "leveldown";
+// import leveldown from "leveldown";
+import rocksdb from "rocksdb";
 import { LevelUp, LevelUpChain, default as levelup } from "levelup";
 
 import { Key, KeyValuePair, StreamErrorCallback } from "../_types";
@@ -13,6 +14,7 @@ export class KTable extends ObjectTransform {
     private batch: LevelUpChain;
     private batchWriteTimeout!: NodeJS.Timeout;
     private keys: Key[];
+    public storeName: string;
     // private writing: boolean = false;
     constructor(
         private batchSize: number = 10000,
@@ -22,7 +24,8 @@ export class KTable extends ObjectTransform {
         super({
             highWaterMark
         });
-        this.store = levelup(leveldown(`.cache-${counter++}`));
+        this.storeName = `.cache-${counter++}`;
+        this.store = levelup(rocksdb(this.storeName));
         this.batch = this.store.batch();
         this.keys = [];
         this.startTimer();
