@@ -61,6 +61,7 @@ export class KTable extends ObjectTransform {
 
     async _transform(data: KeyValuePair, _: any, next: TransformCallback) {
         const { key, value } = data;
+
         if (value == null) {
             this.batch.del(key);
             this.keys = this.keys.filter(

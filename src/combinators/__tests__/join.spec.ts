@@ -9,12 +9,12 @@ describe("Combinator: join", () => {
             foreign: Buffer.from(i.toString())
         }
     }));
+    console.log(_expected);
     it("should join 2 streams by key", done => {
         const stream1 = createReadStream(true);
         const stream2 = createReadStream(true);
         expect.assertions(1);
         const result: { key: any; primary: any; foreign: any }[] = [];
-
         const joined = join(stream1, stream2);
 
         joined.on("data", d => {
@@ -22,6 +22,7 @@ describe("Combinator: join", () => {
         });
 
         joined.on("finish", () => {
+            console.log(result);
             expect(result).toEqual(_expected);
             done();
         });
