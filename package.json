@@ -27,7 +27,7 @@
   "scripts": {
     "prepublishOnly": "yarn test && yarn build",
     "clean": "yarn rimraf lib && yarn rimraf node_modules && yarn",
-    "build": "tsc",
+    "build": "rm -rf ./lib && tsc",
     "test": "yarn build && jest"
   }
 }
