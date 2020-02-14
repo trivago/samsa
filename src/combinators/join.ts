@@ -171,6 +171,7 @@ import { fork, ChildProcess } from "child_process";
 import { EventEmitter } from "events";
 import { KTable } from "../kafka/KTable";
 import { merge } from "./merge";
+import { resolve } from "path";
 
 const defaultProjection: JoinProjection<
     any,
@@ -221,14 +222,14 @@ class Joiner extends ObjectTransform {
 
         const keyBuffer = [...this.keyBuffer];
         this.keyBuffer = new Set();
-
         const subProcess = fork(
-            "keyCheck",
-            [this.primaryKTable.storeName, this.foreignKTable.storeName],
-            {
-                cwd: __dirname
-            }
+            // odd hack to get this working with jest
+            // jest doesn't even attempt to transpile submodules
+            resolve(__dirname, `keyCheck.${__filename.slice(-2)}`),
+            [this.primaryKTable.storeName, this.foreignKTable.storeName]
         );
+
+        this.subProcesses.add(subProcess);
 
         subProcess.send(keyBuffer);
 
@@ -296,8 +297,8 @@ export const innerJoin = <P extends any, F extends any, R extends any>(
     );
 
     // handle mergedInput ending
-    mergedInput.on("end", () => {
-        joiner.finishUp();
+    mergedInput.on("end", async () => {
+        await joiner.finishUp();
     });
 
     return joiner;
