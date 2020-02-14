@@ -28,6 +28,6 @@
     "prepublishOnly": "yarn test && yarn build",
     "clean": "yarn rimraf lib && yarn rimraf node_modules && yarn",
     "build": "tsc",
-    "test": "jest"
+    "test": "yarn build && jest"
   }
 }
