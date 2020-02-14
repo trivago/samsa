@@ -28,9 +28,14 @@ class Joiner extends ObjectTransform {
     ) {
         super();
 
+        this.keyBufferProcessInterval = this.startProcessInterval();
+    }
+
+    private startProcessInterval() {
         this.keyBufferProcessInterval = setInterval(() => {
             this.finalizeBuffer();
         }, 1000);
+        return this.keyBufferProcessInterval;
     }
 
     public finishUp() {
@@ -93,6 +98,13 @@ class Joiner extends ObjectTransform {
 
     async _transform(key: Key, _: any, next: TransformCallback) {
         this.keyBuffer.add(key);
+
+        if (this.keyBuffer.size >= 1000) {
+            clearInterval(this.keyBufferProcessInterval);
+            this.finalizeBuffer();
+            this.startProcessInterval();
+        }
+
         next();
     }
 
