@@ -29,8 +29,11 @@ async function checkKeys(keys: Key[]) {
                 }
             }
         } catch (err) {
-            if (!err.notFound) {
-                process.stderr.write(err.message);
+            if (err.notFound) {
+                // see https://github.com/Level/level#dbgetkey-options-callback
+                continue;
+            } else {
+                process.stderr.write(`${err.message}\n`);
                 process.exit(1);
             }
         }
