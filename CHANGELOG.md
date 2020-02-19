@@ -9,6 +9,7 @@
 
 - Breaking Changes
     - move from LevelDB to RocksDB as the underlying store for joins
+        - this change does not affect sinks however
 - Features
     - Added a configurable buffer to the joiner
     - Added the ability to automatically disconnect a consumer group on process exit
