@@ -25,7 +25,8 @@ class Joiner extends ObjectTransform {
         public primaryKTable: KTable,
         public foreignKTable: KTable,
         private projection: JoinProjection<any, any, any>,
-        private maxKeyBufferSize: number = 10000
+        private maxKeyBufferSize: number = 10000,
+        private keyBufferInterval: number = 1000
     ) {
         super();
 
@@ -35,7 +36,7 @@ class Joiner extends ObjectTransform {
     private startProcessInterval() {
         this.keyBufferProcessInterval = setInterval(() => {
             this.finalizeBuffer();
-        }, 1000);
+        }, this.keyBufferInterval);
         return this.keyBufferProcessInterval;
     }
 
@@ -121,6 +122,7 @@ export const innerJoin = <P extends any, F extends any, R extends any>(
     project: JoinProjection<P, F, any> = defaultProjection,
     kTableConfig: KTableConfig = {},
     maxKeyBufferSize: number = 10000,
+    keyBufferInterval: number = 1000,
     /**
      * Window currently won't do anything, until we can get a PR to RocksDB.
      * Leaving this so that it can be added later
@@ -136,7 +138,8 @@ export const innerJoin = <P extends any, F extends any, R extends any>(
         primaryTable,
         foreignTable,
         project,
-        maxKeyBufferSize
+        maxKeyBufferSize,
+        keyBufferInterval
     );
 
     const primaryKeyStream = primaryStream.pipe(primaryTable);
