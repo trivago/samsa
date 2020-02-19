@@ -3,18 +3,26 @@ import { Kafka, KafkaConfig, Consumer } from "kafkajs";
 import { Readable } from "stream";
 
 const defaultConsumerConfig = {
+    autoDisconnect: true,
     highWaterMark: 100000,
     autoResume: true,
     resumeAfter: 100
 };
+
+const exitSignals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM',"SIGUSR2"];
+
 class ConsumerStream extends Readable {
     private buffer: Message[] = [];
     private running: boolean = false;
+    private connected: boolean = true;
+
+    private signalTraps: NodeJS.Process[] = [];
 
     constructor(
         private consumer: Consumer,
         private topic: string,
         private config: {
+            autoDisconnect: boolean;
             highWaterMark: number;
             autoResume: boolean;
             resumeAfter: number;
@@ -37,6 +45,35 @@ class ConsumerStream extends Readable {
         this.on("resume", () => {
             this.resumeTopics();
         });
+
+
+        if (this.config.autoDisconnect) {
+            this.signalTraps = exitSignals.map(signal => {
+                return process.on(signal, async (code) => {
+                    console.log(`Attempting to gracefully shut down consumer for topic ${topic} after ${code} signal`);
+                    if (this.connected) {
+                        const attempt = await this.disconnect();
+                        if (attempt == undefined) {
+                            console.log(`Consumer for topic ${topic} successfully disconnected. Exiting`);
+                        } else {
+                            console.error(attempt);
+                            process.exit(1);
+                        }
+                    }
+                    process.exit();
+                })
+            });
+        }
+    }
+
+    async disconnect() {
+        try {
+            await this.consumer.disconnect();
+            this.connected = false;
+            return;
+        } catch (err) {
+            return err;
+        }
     }
 
     pauseTopics() {
@@ -129,7 +166,8 @@ export const createConsumerStream = async (
         fromBeginning = true,
         highWaterMark = 100000,
         autoResume = true,
-        resumeAfter = 1000, // allow for more fine grained control
+        resumeAfter = 1000, // allow for more fine grained contro
+        autoDisconnect = true,
         ...consumerConfig
     } = streamConfig;
 
@@ -150,6 +188,7 @@ export const createConsumerStream = async (
     return new ConsumerStream(consumer, topic, {
         highWaterMark,
         autoResume,
-        resumeAfter
+        resumeAfter,
+        autoDisconnect
     });
 };

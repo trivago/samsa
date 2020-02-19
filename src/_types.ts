@@ -55,6 +55,7 @@ export interface StreamConfig extends ConsumerConfig {
     highWaterMark?: number;
     autoResume?: boolean;
     resumeAfter?: number;
+    autoDisconnect?: boolean;
 }
 
 export type StreamErrorCallback = (error?: Error | null) => void;

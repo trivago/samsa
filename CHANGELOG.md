@@ -5,6 +5,14 @@
 -   Features
 -   Bug Fixes
 
+## v0.3.0
+
+- Breaking Changes
+    - move from LevelDB to RocksDB as the underlying store for joins
+- Features
+    - Added a configurable buffer to the joiner
+    - Added the ability to automatically disconnect a consumer group on process exit
+
 ## v0.2.4
 
 - Rollback

@@ -19,15 +19,17 @@ Merges 2 or more streams of data into a single stream.
 -   projecting the joined values as they are emitted
 -   sliding time window joins
 
-| argument     | description                                                                                                   |
-| ------------ | ------------------------------------------------------------------------------------------------------------- |
-| primary      | the stream containing primary keys                                                                            |
-| foreign      | the stream containing foreign keys                                                                            |
-| project      | the projection used to map the primary and foreign values together, defaults to return `{ primary, foreign }` |
-| window       | the amount of time in seconds to keep cached values alive, defaults to `0`                                    |
-| KTableConfig | takes a `batchSize` and `batchAge` to determine how often the given streams are cached                        |
+| argument          | description                                                                                                   |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| primary           | the stream containing primary keys                                                                            |
+| foreign           | the stream containing foreign keys                                                                            |
+| projection        | the projection used to map the primary and foreign values together, defaults to return `{ primary, foreign }` |
+| maxKeyBufferSize  | maximum number of messages to buffer                                                                          |
+| keyBufferInterval | number of ms to wait before processing messages in the buffer                                                 |
+| <!--              | window                                                                                                        | the amount of time in seconds to keep cached values alive, defaults to `0` | --> |
+| <!--              | KTableConfig                                                                                                  | takes a `batchSize` and `batchAge` to determine how often the given streams are cached | --> |
 
-Underlying every join is a `KTable`, which in this case is a key-value cache. The `KTable` uses an instance of `LevelDB` to store and retrieve data from the cache in a reasonable manner. In a Kafka context, this could technically be considered a `KTable to KTable` join.
+Underlying every join is a `KTable`, which in this case is a key-value cache. The `KTable` uses an instance of `RocksDB` to store and retrieve data from the cache in a reasonable manner. In a Kafka context, this could technically be considered a `KTable to KTable` join.
 
 **Note:** `join` is an alias for `innerJoin`
 

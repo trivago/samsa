@@ -15,14 +15,15 @@ A full list of client configuration options can be found in the [KafkaJS client 
 
 ### Stream configuration options
 
-| option        | required | default   | description                                                                                                           |
-| ------------- | -------- | --------- | --------------------------------------------------------------------------------------------------------------------- |
-| groupId       | yes      | undefined | the groupId to use for the underlying kafkaJS consumer                                                                |
-| topic         | yes      | undefined | the topic to subscribe to                                                                                             |
-| fromBeginning | no       | true      | whether or not to start consuming from the beginning of the topic                                                     |
-| highWaterMark | no       | 20k       | the maximum number of messages that can be consumed at once, more messages than this will cause the consumer to pause |
-| autoResume    | no       | true      | whether or not to automatically resume once a set interval has passed                                                 |
-| resumeAfter   | no       | 1000      | the time, in ms, to wait before resuming consuming messages                                                           |
+| option         | required | default   | description                                                                                                           |
+| -------------- | -------- | --------- | --------------------------------------------------------------------------------------------------------------------- |
+| groupId        | yes      | undefined | the groupId to use for the underlying kafkaJS consumer                                                                |
+| topic          | yes      | undefined | the topic to subscribe to                                                                                             |
+| autoDisconnect | no       | true      | tells the stream whether or not to automatically disconnect the consumer                                              |
+| fromBeginning  | no       | true      | whether or not to start consuming from the beginning of the topic                                                     |
+| highWaterMark  | no       | 20k       | the maximum number of messages that can be consumed at once, more messages than this will cause the consumer to pause |
+| autoResume     | no       | true      | whether or not to automatically resume once a set interval has passed                                                 |
+| resumeAfter    | no       | 1000      | the time, in ms, to wait before resuming consuming messages                                                           |
 
 Checkout the [KafkaJS documentation](https://kafka.js.org/docs/consuming#a-name-options-a-options) for a full list of consumer options.
 
