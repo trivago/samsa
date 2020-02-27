@@ -18,9 +18,11 @@ export const from = <T extends any>(
         });
     }
 
-    if (Readable.hasOwnProperty("from")) {
-        return Readable.from(ish);
-    }
+    // removing for now, as it causes issues with strings
+    // if (Readable.hasOwnProperty("from")) {
+    //     return Readable.from(ish);
+    // }
+
     return new ObjectReadable({
         read() {
             for (const value of ish) {
