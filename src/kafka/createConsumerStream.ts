@@ -96,17 +96,22 @@ class ConsumerStream extends Readable {
         this.running = true;
         this.consumer.run({
             eachBatchAutoResolve: false,
-            eachBatch: ({ batch: { messages }, resolveOffset }) => {
+            eachBatch: ({ batch: { messages, partition, topic }, resolveOffset }) => {
                 this.running = true;
 
                 this.buffer = this.buffer.concat(
                     messages.map(({ key, value, offset, timestamp, size, attributes, headers }) => ({
                         key,
                         value,
-                        timestamp,
-                        size,
-                        attributes,
-                        headers,
+                        metaData: {
+                            topic,
+                            partition,
+                            offset,
+                            timestamp,
+                            size,
+                            attributes,
+                            headers,
+                        },
                         commit: () => resolveOffset(offset)
                     }))
                 );

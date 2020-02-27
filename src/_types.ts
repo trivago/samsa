@@ -1,6 +1,6 @@
 import { LevelUp } from "levelup";
 import { AbstractLevelDOWN } from "abstract-leveldown";
-import { ConsumerConfig, Batch } from "kafkajs";
+import { ConsumerConfig, Batch, IHeaders } from "kafkajs";
 
 /**
  * Describes a key that could possibly come from Kafka or another source.
@@ -19,11 +19,22 @@ export interface KeyValuePair {
     value: any;
 }
 
+export interface MessageMetaData {
+    topic: string;
+    partition: number;
+    offset: string;
+    timestamp: string;
+    size: number;
+    attributes: number;
+    headers?: IHeaders;
+}
+
 /**
  * Describes a key value pair coming from KafkaJS, optionally contains the ability
  * to tell KafkaJS that a KVPair has been used and the offset should be committed.
  */
 export interface Message extends KeyValuePair {
+    metaData: MessageMetaData;
     commit?: () => void;
 }
 

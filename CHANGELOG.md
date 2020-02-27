@@ -5,6 +5,18 @@
 -   Features
 -   Bug Fixes
 
+## v0.3.1
+
+- Features
+    - Added meta information to messages being pushed from `createConsumerStream`:
+        - topic
+        - partition
+        - offset
+        - timestamp
+        - size
+        - attributes
+        - headers
+
 ## v0.3.0
 
 - Breaking Changes
