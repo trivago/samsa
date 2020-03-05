@@ -1,8 +1,10 @@
 import { ObjectTransform } from "../utils/ObjectTransform";
-import { Readable, TransformCallback } from "stream";
+import { PassThrough, Readable, TransformCallback } from "stream";
 
 export const switchMap = (project: (t: any) => Readable) => {
     let currentReader: Readable | null = null;
+    let streamRegister: Readable[] = [];
+    let sourceEnded = false;
 
     const out = new ObjectTransform({
         transform(data, _: any, next: TransformCallback) {
@@ -10,7 +12,12 @@ export const switchMap = (project: (t: any) => Readable) => {
 
             if (currentReader) {
                 currentReader.removeAllListeners();
+                streamRegister = streamRegister.filter(
+                    r => r !== currentReader
+                );
             }
+
+            streamRegister.push(reader);
 
             currentReader = reader;
 
@@ -20,6 +27,10 @@ export const switchMap = (project: (t: any) => Readable) => {
 
             reader.on("end", () => {
                 currentReader = null;
+                streamRegister = streamRegister.filter(r => r !== reader);
+                if (sourceEnded && streamRegister.length === 0) {
+                    this.push(null);
+                }
             });
 
             reader.on("error", err => {
@@ -30,13 +41,22 @@ export const switchMap = (project: (t: any) => Readable) => {
         }
     });
 
+    const redirectedInput = new PassThrough({ objectMode: true });
+
+    redirectedInput.pipe(out);
+
     out.on("pipe", source => {
+        source.unpipe(out);
+        source.pipe(
+            redirectedInput,
+            { end: false }
+        );
+
         source.on("end", () => {
-            // @see mergeMap.ts#L32
-            // @ts-ignore
-            out._readableState.ended = false;
-            // @ts-ignore
-            out._writableState.ended = false;
+            sourceEnded = true;
+            if (streamRegister.length === 0) {
+                out.push(null);
+            }
         });
     });
 
