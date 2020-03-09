@@ -1,15 +1,15 @@
 import { ObjectTransform } from "../utils/ObjectTransform";
-import { Readable, TransformCallback } from "stream";
+import { Readable, TransformCallback, PassThrough } from "stream";
 
 export const concatMap = (project: (t: any) => Readable) => {
     let streamRegister: Readable[] = [];
-    let currentReader: Readable | null = null;
 
     const out = new ObjectTransform({
         transform(data, _: any, next: TransformCallback) {
             this.cork();
 
             const reader = project(data);
+            streamRegister.push(reader);
 
             reader.on("data", innerData => {
                 this.push(innerData);
@@ -17,6 +17,10 @@ export const concatMap = (project: (t: any) => Readable) => {
 
             reader.on("end", () => {
                 this.uncork();
+                streamRegister = streamRegister.filter(r => r !== reader);
+                if (streamRegister.length === 0) {
+                    this.push(null);
+                }
             });
 
             reader.on("error", err => {
@@ -26,16 +30,28 @@ export const concatMap = (project: (t: any) => Readable) => {
             next();
         }
     });
+    
+    /**
+     * What is happening here?
+     *
+     * This is in response to a bug where if, for whatever reason, you were piping a
+     * PipeThrough stream into a mergeMap, the end event would fire well before it should.
+     *
+     * So, we are redirecting the input source and explicitly telling it not to pass end
+     * down the stream. This allows us to explicitly call end when we want to. See line 20. If
+     * we still have streams in our register, we need to continue getting the data from them,
+     * but if one of them ends, it will cause `out` to also end. This prevents that.
+     */
+    const redirectedInput = new PassThrough({ objectMode: true });
+
+    redirectedInput.pipe(out);
 
     out.on("pipe", source => {
-        source.on("end", () => {
-            // @see mergeMap.ts#L32
-            // @ts-ignore
-            out._readableState.ended = false;
-            // @ts-ignore
-            out._writableState.ended = false;
-        });
+        source.unpipe(out);
+        source.pipe(
+            redirectedInput,
+            { end: false }
+        );
     });
-
     return out;
 };
