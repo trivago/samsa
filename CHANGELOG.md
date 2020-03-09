@@ -5,6 +5,14 @@
 -   Features
 -   Bug Fixes
 
+## v0.3.3
+
+- Bug Fixes
+  - fix an issue with the `mergeMap`, `switchMap`, and `concatMap`
+    - when used while piping from a `PassThrough` `end` signals would prematurely cause the stream to close.
+    - this change removes a hack that explicitly sets the `ended` state of the output stream to `false`, this was a bad idea
+    - `end` events are now controlled explicitly within each of the `maps`. 
+
 ## v0.3.2
 
 - Bug Fixes
