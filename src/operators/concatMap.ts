@@ -30,7 +30,18 @@ export const concatMap = (project: (t: any) => Readable) => {
             next();
         }
     });
-
+    
+    /**
+     * What is happening here?
+     *
+     * This is in response to a bug where if, for whatever reason, you were piping a
+     * PipeThrough stream into a mergeMap, the end event would fire well before it should.
+     *
+     * So, we are redirecting the input source and explicitly telling it not to pass end
+     * down the stream. This allows us to explicitly call end when we want to. See line 20. If
+     * we still have streams in our register, we need to continue getting the data from them,
+     * but if one of them ends, it will cause `out` to also end. This prevents that.
+     */
     const redirectedInput = new PassThrough({ objectMode: true });
 
     redirectedInput.pipe(out);
