@@ -5,71 +5,39 @@
 -   Features
 -   Bug Fixes
 
-## v0.3.3
+## v0.4.0
 
-- Bug Fixes
-  - fix an issue with the `mergeMap`, `switchMap`, and `concatMap`
-    - when used while piping from a `PassThrough` `end` signals would prematurely cause the stream to close.
-    - this change removes a hack that explicitly sets the `ended` state of the output stream to `false`, this was a bad idea
-    - `end` events are now controlled explicitly within each of the `maps`. 
-
-## v0.3.2
-
-- Bug Fixes
-  - fix an issue where meta data information was not being pushed properly
-    - messages from `createConsumerStream` now look like:
-
-```javascript
-const message = {
-    key,
-    value,
-    metaData: {
-        topic,
-        partition,
-        offset,
-        timestamp,
-        size,
-        attributes,
-        headers,
-    }
-}
-```
-
-## v0.3.1
-
-- Features
-    - Added meta information to messages being pushed from `createConsumerStream`:
-        - topic
-        - partition
-        - offset
-        - timestamp
-        - size
-        - attributes
-        - headers
+-   Breaking Changes
+    -   if `createConsumerStream` and the way meta data worked from v0.3.1 were used, all of that data has been moved to the `metaData` field.
+-   Bug Fixes
+    -   fix an issue with the `mergeMap`, `switchMap`, and `concatMap`
+        -   when used while piping from a `PassThrough` `end` signals would prematurely cause the stream to close.
+        -   this change removes a hack that explicitly sets the `ended` state of the output stream to `false`, this was a bad idea
+        -   `end` events are now controlled explicitly within each of the `maps`.
 
 ## v0.3.0
 
-- Breaking Changes
-    - move from LevelDB to RocksDB as the underlying store for joins
-        - this change does not affect sinks however
-- Features
-    - Added a configurable buffer to the joiner
-    - Added the ability to automatically disconnect a consumer group on process exit
+-   Breaking Changes
+    -   move from LevelDB to RocksDB as the underlying store for joins
+        -   this change does not affect sinks however
+-   Features
+    -   Added a configurable buffer to the joiner
+    -   Added the ability to automatically disconnect a consumer group on process exit
 
 ## v0.2.4
 
-- Rollback
-    - Rollback v0.2.2 and v0.2.3, the memory fix didn't help strangely
+-   Rollback
+    -   Rollback v0.2.2 and v0.2.3, the memory fix didn't help strangely
 
 ## v0.2.3
 
-- Bug Fixes
-    - Fixed a bug where joined messages weren't being output
+-   Bug Fixes
+    -   Fixed a bug where joined messages weren't being output
 
 ## v0.2.2
 
-- Bug Fixes
-    - Changed join from transform to duplex to try and combat memory usage issues
+-   Bug Fixes
+    -   Changed join from transform to duplex to try and combat memory usage issues
 
 ## v0.2.1
 
