@@ -5,6 +5,40 @@
 -   Features
 -   Bug Fixes
 
+## v0.3.2
+
+- Bug Fixes
+  - fix an issue where meta data information was not being pushed properly
+    - messages from `createConsumerStream` now look like:
+
+```javascript
+const message = {
+    key,
+    value,
+    metaData: {
+        topic,
+        partition,
+        offset,
+        timestamp,
+        size,
+        attributes,
+        headers,
+    }
+}
+```
+
+## v0.3.1
+
+- Features
+    - Added meta information to messages being pushed from `createConsumerStream`:
+        - topic
+        - partition
+        - offset
+        - timestamp
+        - size
+        - attributes
+        - headers
+
 ## v0.3.0
 
 - Breaking Changes

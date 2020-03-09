@@ -1,5 +1,5 @@
 import { StreamConfig, Message } from "../_types";
-import { Kafka, KafkaConfig, Consumer } from "kafkajs";
+import { Kafka, KafkaConfig, Consumer, KafkaMessage } from "kafkajs";
 import { Readable } from "stream";
 
 const defaultConsumerConfig = {
@@ -96,13 +96,22 @@ class ConsumerStream extends Readable {
         this.running = true;
         this.consumer.run({
             eachBatchAutoResolve: false,
-            eachBatch: ({ batch: { messages }, resolveOffset }) => {
+            eachBatch: ({ batch: { messages, partition, topic }, resolveOffset }) => {
                 this.running = true;
 
                 this.buffer = this.buffer.concat(
-                    messages.map(({ key, value, offset }) => ({
+                    messages.map(({ key, value, offset, timestamp, size, attributes, headers }) => ({
                         key,
                         value,
+                        metaData: {
+                            topic,
+                            partition,
+                            offset,
+                            timestamp,
+                            size,
+                            attributes,
+                            headers,
+                        },
                         commit: () => resolveOffset(offset)
                     }))
                 );
@@ -123,10 +132,17 @@ class ConsumerStream extends Readable {
         // one at a time
         if (this.buffer.length > 0) {
             for (const message of this.buffer) {
-                const { key, value, commit } = message;
+                const {
+                    key,
+                    value,
+                    commit,
+                    metaData
+                } = message as Message;
+                
                 this.push({
                     key,
-                    value
+                    value,
+                    metaData
                 });
                 if (commit && typeof commit === "function") {
                     commit();
