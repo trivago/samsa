@@ -135,20 +135,14 @@ class ConsumerStream extends Readable {
                 const {
                     key,
                     value,
-                    timestamp,
-                    size,
-                    attributes,
-                    headers,
-                    commit
-                } = message as (Message & KafkaMessage);
+                    commit,
+                    metaData
+                } = message as Message;
                 
                 this.push({
                     key,
                     value,
-                    timestamp,
-                    size,
-                    attributes,
-                    headers,
+                    metaData
                 });
                 if (commit && typeof commit === "function") {
                     commit();
