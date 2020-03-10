@@ -3,8 +3,8 @@ import { PassThrough, Readable, TransformCallback } from "stream";
 
 export const switchMap = (project: (t: any) => Readable) => {
     let currentReader: Readable | null = null;
-    let streamRegister: Readable[] = [];
-    let sourceEnded = false;
+    const streamRegister: Set<Readable> = new Set();
+    const sources: Set<Readable> = new Set();
 
     const out = new ObjectTransform({
         transform(data, _: any, next: TransformCallback) {
@@ -12,12 +12,10 @@ export const switchMap = (project: (t: any) => Readable) => {
 
             if (currentReader) {
                 currentReader.removeAllListeners();
-                streamRegister = streamRegister.filter(
-                    r => r !== currentReader
-                );
+                streamRegister.delete(currentReader);
             }
 
-            streamRegister.push(reader);
+            streamRegister.add(reader);
 
             currentReader = reader;
 
@@ -27,10 +25,8 @@ export const switchMap = (project: (t: any) => Readable) => {
 
             reader.on("end", () => {
                 currentReader = null;
-                streamRegister = streamRegister.filter(r => r !== reader);
-                if (sourceEnded && streamRegister.length === 0) {
-                    this.push(null);
-                }
+                streamRegister.delete(reader);
+                attemptClose();
             });
 
             reader.on("error", err => {
@@ -40,7 +36,7 @@ export const switchMap = (project: (t: any) => Readable) => {
             return next();
         }
     });
-    
+
     /**
      * What is happening here?
      *
@@ -63,13 +59,19 @@ export const switchMap = (project: (t: any) => Readable) => {
             { end: false }
         );
 
+        sources.add(source);
+
         source.on("end", () => {
-            sourceEnded = true;
-            if (streamRegister.length === 0) {
-                out.push(null);
-            }
+            sources.delete(source);
+            attemptClose();
         });
     });
+
+    function attemptClose() {
+        if (sources.size === 0 && streamRegister.size === 0) {
+            out.push(null);
+        }
+    }
 
     return out;
 };

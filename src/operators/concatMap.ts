@@ -2,14 +2,15 @@ import { ObjectTransform } from "../utils/ObjectTransform";
 import { Readable, TransformCallback, PassThrough } from "stream";
 
 export const concatMap = (project: (t: any) => Readable) => {
-    let streamRegister: Readable[] = [];
+    const streamRegister: Set<Readable> = new Set();
+    const sources: Set<Readable> = new Set();
 
     const out = new ObjectTransform({
         transform(data, _: any, next: TransformCallback) {
             this.cork();
 
             const reader = project(data);
-            streamRegister.push(reader);
+            streamRegister.add(reader);
 
             reader.on("data", innerData => {
                 this.push(innerData);
@@ -17,10 +18,8 @@ export const concatMap = (project: (t: any) => Readable) => {
 
             reader.on("end", () => {
                 this.uncork();
-                streamRegister = streamRegister.filter(r => r !== reader);
-                if (streamRegister.length === 0) {
-                    this.push(null);
-                }
+                streamRegister.delete(reader);
+                attemptClose();
             });
 
             reader.on("error", err => {
@@ -30,7 +29,7 @@ export const concatMap = (project: (t: any) => Readable) => {
             next();
         }
     });
-    
+
     /**
      * What is happening here?
      *
@@ -52,6 +51,20 @@ export const concatMap = (project: (t: any) => Readable) => {
             redirectedInput,
             { end: false }
         );
+
+        sources.add(source);
+
+        source.on("end", () => {
+            sources.delete(source);
+            attemptClose();
+        });
     });
+
+    function attemptClose() {
+        if (sources.size === 0 && streamRegister.size === 0) {
+            out.push(null);
+        }
+    }
+
     return out;
 };
