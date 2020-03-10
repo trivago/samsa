@@ -1,7 +1,7 @@
 import { ObjectReadable } from "../../utils/ObjectReadable";
-
+import { from } from "../../creators";
 import { switchMap } from "../switchMap";
-import { createReadStream } from "./stream.setup";
+import { createReadStream, slowCountStream } from "./stream.setup";
 
 const longCounter = () => {
     let count = 0;
@@ -102,6 +102,65 @@ describe("Operator: switchMap", () => {
 
         switchedStream.on("end", () => {
             expect(actualOutput).toEqual([0, 1, 2, 0, 1, 2, 0, 1, 2]);
+            done();
+        });
+    });
+
+    it("can handle async calls", done => {
+        expect.assertions(1);
+        const stream = createReadStream(5);
+
+        const mappedStream = stream.pipe(
+            switchMap(n => {
+                return from(
+                    new Promise((res, rej) => {
+                        setTimeout(() => {
+                            res(n);
+                        }, 100 * n);
+                    })
+                );
+            })
+        );
+
+        const actualOutput: number[] = [];
+
+        mappedStream.on("data", data => {
+            actualOutput.push(data);
+        });
+
+        mappedStream.on("end", () => {
+            expect(actualOutput).toEqual([4]);
+            done();
+        });
+    });
+
+    it("can map from slow streams", done => {
+        expect.assertions(1);
+        const stream = slowCountStream(5);
+
+        const mappedStream = stream.pipe(
+            switchMap(n => {
+                return from(
+                    new Promise(res => {
+                        setTimeout(() => {
+                            res(n);
+                        }, 100 * n);
+                    })
+                );
+            })
+        );
+
+        const actualOutput: number[] = [];
+
+        mappedStream.on("data", data => {
+            actualOutput.push(data);
+        });
+
+        mappedStream.on("end", () => {
+            // here we see that n = 0 resolves immediately
+            // n = 1 will resolve after 100ms which is
+            // enough time for the rest to try and resolve
+            expect(actualOutput).toEqual([0, 1, 5]);
             done();
         });
     });

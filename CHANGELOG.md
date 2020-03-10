@@ -5,6 +5,11 @@
 -   Features
 -   Bug Fixes
 
+## v0.4.1
+
+-   Bug Fixes
+    -   fix an issue with `mergeMap` where the output stream would end prematurely before all day has been consumed.
+
 ## v0.4.0
 
 -   Breaking Changes
