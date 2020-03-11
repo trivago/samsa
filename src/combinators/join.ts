@@ -40,62 +40,88 @@ class Joiner extends ObjectTransform {
         return this.keyBufferProcessInterval;
     }
 
-    public finishUp() {
-        return new Promise(res => {
-            clearInterval(this.keyBufferProcessInterval);
+    // public finishUp() {
+    //     return new Promise(res => {
+    //         clearInterval(this.keyBufferProcessInterval);
 
-            if (this.keyBuffer.size > 0) {
-                const ee = this.finalizeBuffer();
+    //         if (this.keyBuffer.size > 0) {
+    //             const ee = this.finalizeBuffer();
 
-                ee.on("finish", () => {
-                    this.end();
-                    res();
-                });
-            } else {
-                this.end();
-                res();
-            }
-        });
-    }
+    //             ee.on("finish", () => {
+    //                 this.end();
+    //                 res();
+    //             });
+    //         } else {
+    //             this.end();
+    //             res();
+    //         }
+    //     });
+    // }
 
-    public finalizeBuffer() {
-        const notifier = new EventEmitter();
+    public async finalizeBuffer() {
+        // const notifier = new EventEmitter();
 
         const keyBuffer = [...this.keyBuffer];
         this.keyBuffer = new Set();
-        const subProcess = fork(
-            // odd hack to get this working with jest
-            // jest doesn't even attempt to transpile submodules
-            resolve(__dirname, `keyCheck.${__filename.slice(-2)}`),
-            [this.primaryKTable.storeName, this.foreignKTable.storeName]
-        );
 
-        this.subProcesses.add(subProcess);
+        for (const key of keyBuffer) {
+            try {
+                const [primary, foreign] = await Promise.all([
+                    this.primaryKTable.get(key),
+                    this.foreignKTable.get(key)
+                ]);
 
-        subProcess.send(keyBuffer);
+                const value = this.projection(
+                    Buffer.from(primary),
+                    Buffer.from(foreign)
+                );
 
-        subProcess.on("exit", () => {
-            this.subProcesses.delete(subProcess);
-            notifier.emit("finish");
-        });
+                this.push({
+                    key,
+                    value
+                });
+            } catch (err) {
+                if (err.notFound) {
+                    // see https://github.com/Level/level#dbgetkey-options-callback
+                    continue;
+                } else {
+                    this.destroy(err);
+                }
+            }
+        }
+        // const subProcess = fork(
+        //     // odd hack to get this working with jest
+        //     // jest doesn't even attempt to transpile submodules
+        //     resolve(__dirname, `keyCheck.${__filename.slice(-2)}`),
+        //     [this.primaryKTable.storeName, this.foreignKTable.storeName]
+        // );
 
-        subProcess.on("error", err => {
-            this.destroy(err);
-        });
+        // this.subProcesses.add(subProcess);
 
-        subProcess.on("message", ({ key, primary, foreign }) => {
-            const value = this.projection(
-                Buffer.from(primary),
-                Buffer.from(foreign)
-            );
+        // subProcess.send(keyBuffer);
 
-            this.push({
-                key,
-                value
-            });
-        });
+        // subProcess.on("exit", () => {
+        //     this.subProcesses.delete(subProcess);
+        //     notifier.emit("finish");
+        // });
 
-        return notifier;
+        // subProcess.on("error", err => {
+        //     this.destroy(err);
+        // });
+
+        // subProcess.on("message", ({ key, primary, foreign }) => {
+        //     const value = this.projection(
+        //         Buffer.from(primary),
+        //         Buffer.from(foreign)
+        //     );
+
+        //     this.push({
+        //         key,
+        //         value
+        //     });
+        // });
+
+        // return notifier;
     }
 
     async _transform(key: Key, _: any, next: TransformCallback) {
@@ -110,8 +136,9 @@ class Joiner extends ObjectTransform {
         next();
     }
 
-    _final(next: TransformCallback) {
-        this.finishUp();
+    async _final(next: TransformCallback) {
+        clearInterval(this.keyBufferProcessInterval);
+        await this.finalizeBuffer();
         next();
     }
 }
@@ -148,14 +175,15 @@ export const innerJoin = <P extends any, F extends any, R extends any>(
     const mergedInput = merge(primaryKeyStream, foreignKeyStream);
 
     mergedInput.pipe(
-        joiner,
-        { end: false }
+        joiner
+        // { end: false }
     );
 
-    // handle mergedInput ending
-    mergedInput.on("end", async () => {
-        await joiner.finishUp();
-    });
+    // // handle mergedInput ending
+    // mergedInput.on("end", async () => {
+    //     console.log("merge ended???");
+    //     // await joiner.finishUp();
+    // });
 
     return joiner;
 };
