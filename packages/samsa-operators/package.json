@@ -1,12 +1,11 @@
 {
-  "name": "@trivago/samsa-utils",
+  "name": "@trivago/samsa-operators",
   "version": "1.0.0",
   "main": "lib/index.js",
   "license": "MIT",
   "scripts": {
     "build": "tsc",
     "prebuild": "yarn clean",
-    "clean": "rimraf lib tsconfig.tsbuildinfo",
-    "test": "jest --config ../../jest.config.js"
+    "clean": "rimraf lib tsconfig.tsbuildinfo"
   }
 }
