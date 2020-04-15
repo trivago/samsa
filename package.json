@@ -1,0 +1,21 @@
+{
+  "name": "samsa",
+  "private": true,
+  "version": "1.0.0",
+  "repository": "git@github.com:trivago/samsa.git",
+  "author": "Carson McKinstry <carson.mckinstry@trivago.com>",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@types/node": "^13.11.1",
+    "jest": "^25.3.0",
+    "lerna": "^3.20.2",
+    "ts-jest": "^25.3.1",
+    "typescript": "^3.8.3"
+  },
+  "scripts": {
+    "build": "lerna run build"
+  }
+}
