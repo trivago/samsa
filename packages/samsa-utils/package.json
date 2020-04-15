@@ -1,0 +1,11 @@
+{
+  "name": "@trivago/samsa-utils",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "prebuild": "yarn clean",
+    "clean": "rimraf lib tsconfig.tsbuildinfo"
+  }
+}

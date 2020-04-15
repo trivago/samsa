@@ -1,0 +1,17 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "samsa-operators",
+    },
+    {
+      "path": "samsa-kafka",
+    },
+    {
+      "path": "samsa-combinators",
+    },
+    {
+      "path": "samsa-utils"
+    }
+  ]
+}
